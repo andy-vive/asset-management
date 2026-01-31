@@ -1750,57 +1750,136 @@
                 totalValue += a.type === 'savings' ? a.amount : a.quantity * a.currentPrice;
             });
 
-            let html = '';
+            // Group assets by type
+            const groupedAssets = {};
             portfolioData.otherAssets.forEach((asset, index) => {
-                const config = assetTypeConfig[asset.type] || assetTypeConfig.other;
+                if (!groupedAssets[asset.type]) {
+                    groupedAssets[asset.type] = {
+                        assets: [],
+                        totalQuantity: 0,
+                        totalCost: 0,
+                        totalValue: 0,
+                        unit: asset.unit
+                    };
+                }
+                groupedAssets[asset.type].assets.push({ ...asset, originalIndex: index });
                 
                 if (asset.type === 'savings') {
-                    const weight = totalValue > 0 ? (asset.amount / totalValue * 100) : 0;
-                    html += `
-                        <tr>
-                            <td>
-                                <span class="badge ${config.badge}">${config.icon} ${asset.name}</span>
-                            </td>
-                            <td>${weight.toFixed(2)}%</td>
-                            <td colspan="2">${formatVND(asset.amount)}</td>
-                            <td colspan="4">Lãi suất: ${asset.rate}%/năm</td>
-                            <td class="neutral-text">—</td>
-                            <td class="neutral-text">—</td>
-                            <td>
-                                <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
-                                <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
-                            </td>
-                        </tr>
-                    `;
+                    groupedAssets[asset.type].totalQuantity += asset.amount;
+                    groupedAssets[asset.type].totalCost += asset.amount;
+                    groupedAssets[asset.type].totalValue += asset.amount;
                 } else {
-                    const costValue = asset.quantity * asset.costPrice;
-                    const currentValue = asset.quantity * asset.currentPrice;
-                    const profit = currentValue - costValue;
-                    const profitPercent = costValue > 0 ? (profit / costValue * 100) : 0;
-                    const weight = totalValue > 0 ? (currentValue / totalValue * 100) : 0;
+                    groupedAssets[asset.type].totalQuantity += asset.quantity;
+                    groupedAssets[asset.type].totalCost += asset.quantity * asset.costPrice;
+                    groupedAssets[asset.type].totalValue += asset.quantity * asset.currentPrice;
+                }
+            });
 
+            let html = '';
+            
+            // Render by groups
+            Object.keys(groupedAssets).forEach(type => {
+                const group = groupedAssets[type];
+                const config = assetTypeConfig[type] || assetTypeConfig.other;
+                
+                // Render group header/summary if more than 1 asset or always show summary
+                if (group.assets.length >= 1) {
+                    const groupProfit = group.totalValue - group.totalCost;
+                    const groupProfitPercent = group.totalCost > 0 ? (groupProfit / group.totalCost * 100) : 0;
+                    const groupWeight = totalValue > 0 ? (group.totalValue / totalValue * 100) : 0;
+                    
                     html += `
-                        <tr>
-                            <td>
-                                <span class="badge ${config.badge}">${config.icon} ${asset.name}</span>
+                        <tr style="background: var(--bg-secondary);">
+                            <td colspan="2">
+                                <strong><span class="badge ${config.badge}">${config.icon} ${config.name}</span></strong>
+                                <span style="margin-left: 0.5rem; color: var(--text-muted); font-size: 0.8rem;">(${group.assets.length} mục)</span>
                             </td>
-                            <td>${weight.toFixed(2)}%</td>
-                            <td>${formatNumber(asset.quantity)}</td>
-                            <td>${asset.unit}</td>
-                            <td>${formatNumber(asset.costPrice)}</td>
-                            <td>${formatNumber(asset.currentPrice)}</td>
-                            <td>${formatVND(costValue)}</td>
-                            <td>${formatVND(currentValue)}</td>
-                            <td class="${profit >= 0 ? 'positive' : 'negative'}">${formatVND(profit)}</td>
-                            <td class="${profitPercent >= 0 ? 'positive' : 'negative'}">${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%</td>
-                            <td>
-                                <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
-                                <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
-                            </td>
+                            <td style="font-weight: 600;">${type === 'savings' ? formatVND(group.totalQuantity) : formatNumber(group.totalQuantity)}</td>
+                            <td>${group.unit}</td>
+                            <td colspan="2"></td>
+                            <td style="font-weight: 600;">${formatVND(group.totalCost)}</td>
+                            <td style="font-weight: 600;">${formatVND(group.totalValue)}</td>
+                            <td class="${groupProfit >= 0 ? 'positive' : 'negative'}" style="font-weight: 600;">${formatVND(groupProfit)}</td>
+                            <td class="${groupProfitPercent >= 0 ? 'positive' : 'negative'}" style="font-weight: 600;">${groupProfitPercent >= 0 ? '+' : ''}${groupProfitPercent.toFixed(2)}%</td>
+                            <td></td>
                         </tr>
                     `;
                 }
+
+                // Render individual assets
+                group.assets.forEach(asset => {
+                    const index = asset.originalIndex;
+                    
+                    if (asset.type === 'savings') {
+                        const weight = totalValue > 0 ? (asset.amount / totalValue * 100) : 0;
+                        html += `
+                            <tr>
+                                <td style="padding-left: 2rem;">
+                                    <span style="color: var(--text-secondary);">└</span> ${asset.name}
+                                </td>
+                                <td>${weight.toFixed(2)}%</td>
+                                <td colspan="2">${formatVND(asset.amount)}</td>
+                                <td colspan="4">Lãi suất: ${asset.rate}%/năm</td>
+                                <td class="neutral-text">—</td>
+                                <td class="neutral-text">—</td>
+                                <td>
+                                    <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
+                                    <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        const costValue = asset.quantity * asset.costPrice;
+                        const currentValue = asset.quantity * asset.currentPrice;
+                        const profit = currentValue - costValue;
+                        const profitPercent = costValue > 0 ? (profit / costValue * 100) : 0;
+                        const weight = totalValue > 0 ? (currentValue / totalValue * 100) : 0;
+
+                        html += `
+                            <tr>
+                                <td style="padding-left: 2rem;">
+                                    <span style="color: var(--text-secondary);">└</span> ${asset.name}
+                                </td>
+                                <td>${weight.toFixed(2)}%</td>
+                                <td>${formatNumber(asset.quantity)}</td>
+                                <td>${asset.unit}</td>
+                                <td>${formatNumber(asset.costPrice)}</td>
+                                <td>${formatNumber(asset.currentPrice)}</td>
+                                <td>${formatVND(costValue)}</td>
+                                <td>${formatVND(currentValue)}</td>
+                                <td class="${profit >= 0 ? 'positive' : 'negative'}">${formatVND(profit)}</td>
+                                <td class="${profitPercent >= 0 ? 'positive' : 'negative'}">${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%</td>
+                                <td>
+                                    <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
+                                    <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
             });
+
+            // Grand total row
+            let grandTotalCost = 0;
+            let grandTotalValue = 0;
+            Object.values(groupedAssets).forEach(group => {
+                grandTotalCost += group.totalCost;
+                grandTotalValue += group.totalValue;
+            });
+            const grandProfit = grandTotalValue - grandTotalCost;
+            const grandProfitPercent = grandTotalCost > 0 ? (grandProfit / grandTotalCost * 100) : 0;
+
+            html += `
+                <tr style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1)); border-top: 2px solid var(--accent-gold);">
+                    <td colspan="6"><strong>📊 TỔNG CỘNG TÀI SẢN KHÁC</strong></td>
+                    <td style="font-weight: 700;">${formatVND(grandTotalCost)}</td>
+                    <td style="font-weight: 700;">${formatVND(grandTotalValue)}</td>
+                    <td class="${grandProfit >= 0 ? 'positive' : 'negative'}" style="font-weight: 700;">${formatVND(grandProfit)}</td>
+                    <td class="${grandProfitPercent >= 0 ? 'positive' : 'negative'}" style="font-weight: 700;">${grandProfitPercent >= 0 ? '+' : ''}${grandProfitPercent.toFixed(2)}%</td>
+                    <td></td>
+                </tr>
+            `;
+
             tbody.innerHTML = html;
         }
 
