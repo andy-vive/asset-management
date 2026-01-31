@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Tài Sản</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-card-hover: #1f2937;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-gold: #fbbf24;
+            --accent-gold-dark: #d97706;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --border-color: #374151;
+            --gradient-gold: linear-gradient(135deg, #fbbf24, #f59e0b);
+            --gradient-emerald: linear-gradient(135deg, #10b981, #059669);
+            --gradient-rose: linear-gradient(135deg, #f43f5e, #e11d48);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --shadow-glow-gold: 0 0 40px rgba(251, 191, 36, 0.15);
+            --shadow-glow-emerald: 0 0 40px rgba(16, 185, 129, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-gold);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-gold);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow-gold);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-success {
+            background: var(--gradient-emerald);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow-emerald);
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .summary-card.gold::before {
+            background: var(--gradient-gold);
+        }
+
+        .summary-card.profit::before {
+            background: var(--gradient-emerald);
+        }
+
+        .summary-card.loss::before {
+            background: var(--gradient-rose);
+        }
+
+        .summary-card.neutral::before {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .summary-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .summary-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .summary-change.positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+        }
+
+        .summary-change.negative {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tables */
+        .table-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 500;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        td {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .stock-name {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-weight: 500;
+        }
+
+        .stock-code {
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .stock-company {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .positive {
+            color: var(--accent-emerald);
+        }
+
+        .negative {
+            color: var(--accent-rose);
+        }
+
+        .neutral-text {
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-gold {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .badge-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        /* Action buttons in table */
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.375rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .action-btn.delete:hover {
+            color: var(--accent-rose);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .tab.active {
+            background: var(--gradient-gold);
+            color: #000;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* File input */
+        .file-input-wrapper {
+            position: relative;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-input-wrapper:hover {
+            border-color: var(--accent-gold);
+            background: rgba(251, 191, 36, 0.05);
+        }
+
+        .file-input-wrapper input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-input-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .file-input-text {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        /* Monthly Returns */
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .month-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .month-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .month-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-subtext {
+            font-size: 0.875rem;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1100;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--accent-emerald);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--accent-rose);
+        }
+
+        /* Legend */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* Market Prices Bar */
+        .market-prices-bar {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .market-prices-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .market-prices-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .market-prices-updated {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .market-prices-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .market-price-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            min-width: 200px;
+        }
+
+        .market-price-icon {
+            font-size: 1.5rem;
+        }
+
+        .market-price-info {
+            flex: 1;
+        }
+
+        .market-price-name {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .market-price-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .market-price-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">💰</div>
+                <span class="logo-text">Quản Lý Tài Sản</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="openMarketPriceModal()">
+                    💹 Giá thị trường
+                </button>
+                <button class="btn btn-secondary" onclick="exportCSV()">
+                    📥 Xuất CSV
+                </button>
+                <label class="btn btn-secondary" style="cursor: pointer;">
+                    📤 Nhập CSV
+                    <input type="file" accept=".csv" onchange="importCSV(event)" style="display: none;">
+                </label>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    ➕ Thêm tài sản
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card gold animate-in">
+                <div class="summary-label">Tổng giá trị tài sản</div>
+                <div class="summary-value" id="total-value">0 ₫</div>
+            </div>
+            <div class="summary-card neutral animate-in delay-1">
+                <div class="summary-label">Tổng giá vốn</div>
+                <div class="summary-value" id="total-cost">0 ₫</div>
+            </div>
+            <div class="summary-card profit animate-in delay-2" id="profit-card">
+                <div class="summary-label">Tổng lợi nhuận</div>
+                <div class="summary-value" id="total-profit">0 ₫</div>
+                <div class="summary-change positive" id="profit-percent">
+                    <span>↑</span> 0%
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Prices Bar -->
+        <div class="market-prices-bar animate-in delay-1">
+            <div class="market-prices-header">
+                <span class="market-prices-title">💹 Giá thị trường</span>
+                <span class="market-prices-updated" id="prices-updated-time"></span>
+            </div>
+            <div class="market-prices-grid" id="market-prices-display">
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-section">
+            <div class="chart-card animate-in delay-2">
+                <h3 class="chart-title">📊 Phân bổ tài sản</h3>
+                <div class="chart-container">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+                <div class="chart-legend" id="allocation-legend"></div>
+            </div>
+            <div class="chart-card animate-in delay-3">
+                <h3 class="chart-title">📈 Tỷ trọng danh mục cổ phiếu</h3>
+                <div class="chart-container">
+                    <canvas id="stockChart"></canvas>
+                </div>
+                <div class="chart-legend" id="stock-legend"></div>
+            </div>
+        </div>
+
+        <!-- Stock Portfolio -->
+        <div class="table-section animate-in delay-3">
+            <div class="table-header">
+                <h3 class="table-title">📋 Danh sách cổ phiếu trong danh mục</h3>
+                <button class="btn btn-primary" onclick="openAddModal('stock')">
+                    ➕ Thêm cổ phiếu
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã CK</th>
+                            <th>Tỷ trọng</th>
+                            <th>Khối lượng</th>
+                            <th>Giá vốn</th>
+                            <th>Giá thị trường</th>
+                            <th>Giá trị vốn</th>
+                            <th>Giá trị hiện tại</th>
+                            <th>Lợi nhuận</th>
+                            <th>%</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Other Assets -->
+        <div class="table-section animate-in delay-4">
+            <div class="table-header">
+                <h3 class="table-title">💎 Tài sản khác</h3>
+                <button class="btn btn-primary" onclick="openAddModal('other')">
+                    ➕ Thêm tài sản
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Loại tài sản</th>
+                            <th>Tỷ trọng</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị</th>
+                            <th>Giá vốn</th>
+                            <th>Giá hiện tại</th>
+                            <th>Giá trị vốn</th>
+                            <th>Giá trị hiện tại</th>
+                            <th>Lãi/Lỗ</th>
+                            <th>%</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="other-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Monthly Returns -->
+        <div class="table-section animate-in">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(this, 'monthly')">📅 Lợi nhuận theo tháng</button>
+                <button class="tab" onclick="switchTab(this, 'performance')">📊 Hiệu quả theo loại tài sản</button>
+                <button class="tab" onclick="switchTab(this, 'history')">📜 Lịch sử giao dịch</button>
+            </div>
+            <div id="monthly-content">
+                <div class="table-header">
+                    <h3 class="table-title">Tỷ suất lợi nhuận năm 2025</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <select class="form-select" style="width: auto;" id="year-select" onchange="updateMonthlyView()">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="openMonthlyModal()">✏️ Chỉnh sửa</button>
+                    </div>
+                </div>
+                <div class="monthly-grid" id="monthly-grid">
+                </div>
+            </div>
+            <div id="history-content" style="display: none;">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Loại</th>
+                                <th>Tài sản</th>
+                                <th>Hành động</th>
+                                <th>Số lượng</th>
+                                <th>Giá</th>
+                                <th>Tổng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="performance-content" style="display: none;">
+                <div class="table-header">
+                    <h3 class="table-title">Hiệu quả đầu tư theo loại tài sản</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <select class="form-select" style="width: auto;" id="perf-year-select" onchange="renderPerformanceView()">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openSnapshotModal()">📸 Chốt giá trị tháng</button>
+                    </div>
+                </div>
+                <div style="padding: 0 1.5rem;">
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                        💡 Nhấn "Chốt giá trị tháng" vào cuối mỗi tháng để lưu giá trị tài sản. Hệ thống sẽ tự động tính % lợi nhuận.
+                    </p>
+                </div>
+                <div class="table-wrapper">
+                    <table id="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Loại tài sản</th>
+                                <th>T1</th>
+                                <th>T2</th>
+                                <th>T3</th>
+                                <th>T4</th>
+                                <th>T5</th>
+                                <th>T6</th>
+                                <th>T7</th>
+                                <th>T8</th>
+                                <th>T9</th>
+                                <th>T10</th>
+                                <th>T11</th>
+                                <th>T12</th>
+                                <th>Cả năm</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performance-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="chart-card" style="margin: 1.5rem;">
+                    <h3 class="chart-title">📈 Biểu đồ hiệu quả đầu tư theo tháng</h3>
+                    <div style="height: 350px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="table-section" style="margin: 1.5rem;">
+                    <div class="table-header">
+                        <h3 class="table-title">📋 Lịch sử chốt giá trị</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tháng</th>
+                                    <th>Cổ phiếu</th>
+                                    <th>Vàng nhẫn</th>
+                                    <th>Vàng SJC</th>
+                                    <th>PAXG</th>
+                                    <th>USDT</th>
+                                    <th>Tiết kiệm</th>
+                                    <th>Tổng</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="snapshot-history-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Asset Modal -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Thêm tài sản mới</h3>
+                <button class="modal-close" onclick="closeModal('add-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Loại tài sản</label>
+                        <select class="form-select" id="asset-type" onchange="toggleAssetFields()">
+                            <option value="stock">Cổ phiếu</option>
+                            <option value="gold">Vàng nhẫn/miếng</option>
+                            <option value="gold_sjc">Vàng SJC</option>
+                            <option value="paxg">Vàng PAXG</option>
+                            <option value="usdt">USDT</option>
+                            <option value="savings">Tiết kiệm</option>
+                            <option value="other">Khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ngày giao dịch</label>
+                        <input type="date" class="form-input" id="transaction-date">
+                    </div>
+                </div>
+                
+                <!-- Stock Fields -->
+                <div id="stock-fields">
+                    <div class="form-group">
+                        <label class="form-label">Mã chứng khoán</label>
+                        <input type="text" class="form-input" id="stock-code" placeholder="VD: FPT, VNM, VIC...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tên công ty (tuỳ chọn)</label>
+                        <input type="text" class="form-input" id="stock-company" placeholder="VD: CTCP FPT">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Khối lượng</label>
+                            <input type="number" class="form-input" id="stock-quantity" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Giá vốn (VNĐ)</label>
+                            <input type="number" class="form-input" id="stock-cost" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Giá thị trường (VNĐ)</label>
+                        <input type="number" class="form-input" id="stock-market" placeholder="0">
+                    </div>
+                </div>
+
+                <!-- Other Asset Fields -->
+                <div id="other-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Tên tài sản</label>
+                        <input type="text" class="form-input" id="asset-name" placeholder="VD: Vàng nhẫn 9999">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Số lượng</label>
+                            <input type="number" step="0.01" class="form-input" id="asset-quantity" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Đơn vị</label>
+                            <input type="text" class="form-input" id="asset-unit" placeholder="Lượng, PAXG, USDT...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Giá vốn / đơn vị</label>
+                            <input type="number" class="form-input" id="asset-cost" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Giá hiện tại / đơn vị</label>
+                            <input type="number" class="form-input" id="asset-price" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Fields -->
+                <div id="savings-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Tên khoản tiết kiệm</label>
+                        <input type="text" class="form-input" id="savings-name" placeholder="VD: Tiết kiệm ngân hàng X">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Số tiền gửi (VNĐ)</label>
+                            <input type="number" class="form-input" id="savings-amount" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lãi suất (%/năm)</label>
+                            <input type="number" step="0.01" class="form-input" id="savings-rate" placeholder="5.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('add-modal')">Huỷ</button>
+                <button class="btn btn-success" onclick="saveAsset()">💾 Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Edit Modal -->
+    <div class="modal-overlay" id="monthly-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Chỉnh sửa lợi nhuận tháng</h3>
+                <button class="modal-close" onclick="closeModal('monthly-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="monthly-edit-body">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('monthly-modal')">Huỷ</button>
+                <button class="btn btn-success" onclick="saveMonthlyReturns()">💾 Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Asset Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Chỉnh sửa tài sản</h3>
+                <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="edit-modal-body">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Huỷ</button>
+                <button class="btn btn-success" id="edit-save-btn">💾 Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snapshot Modal -->
+    <div class="modal-overlay" id="snapshot-modal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">📸 Chốt giá trị tài sản</h3>
+                <button class="modal-close" onclick="closeModal('snapshot-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Chọn tháng</label>
+                        <input type="month" class="form-input" id="snapshot-month">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-secondary" onclick="loadCurrentValues()" style="width: 100%;">🔄 Lấy giá trị hiện tại</button>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                    Nhập giá trị tài sản vào cuối tháng được chọn. Hệ thống sẽ tính % lợi nhuận so với tháng trước.
+                </p>
+                <div id="snapshot-fields"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('snapshot-modal')">Huỷ</button>
+                <button class="btn btn-success" onclick="saveSnapshot()">💾 Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Price Modal -->
+    <div class="modal-overlay" id="market-price-modal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💹 Cập nhật giá thị trường</h3>
+                <button class="modal-close" onclick="closeModal('market-price-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                    Cập nhật giá thị trường sẽ tự động tính lại giá trị hiện tại của tất cả tài sản cùng loại.
+                </p>
+                <div id="market-price-fields"></div>
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 12px; border: 1px solid var(--accent-blue);">
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">
+                        💡 <strong>Mẹo:</strong> Giá cổ phiếu được quản lý riêng trong bảng danh mục cổ phiếu.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('market-price-modal')">Huỷ</button>
+                <button class="btn btn-success" onclick="saveMarketPrices()">💾 Cập nhật giá</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // ============== DATA STORE ==============
+        let portfolioData = {
+            stocks: [],
+            otherAssets: [],
+            monthlyReturns: {},
+            transactions: [],
+            performanceData: {}, // { year: { assetType: { month: percentage } } }
+            monthlySnapshots: {}, // { "2025-01": { stock: {value, cost}, gold: {value, cost}, ... , total: {value, cost} } }
+            marketPrices: {} // { gold: {price, unit, updatedAt}, paxg: {price, unit, updatedAt}, ... }
+        };
+
+        // Asset type configurations
+        const assetTypeConfig = {
+            stock: { name: 'Cổ phiếu', unit: '', badge: 'badge-blue', icon: '📈', hasMarketPrice: false },
+            gold: { name: 'Vàng nhẫn', unit: 'Lượng', badge: 'badge-gold', icon: '🥇', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
+            gold_sjc: { name: 'Vàng SJC', unit: 'Lượng', badge: 'badge-gold', icon: '🏅', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
+            paxg: { name: 'Vàng PAXG', unit: 'PAXG', badge: 'badge-purple', icon: '💎', hasMarketPrice: true, priceUnit: 'USD/PAXG' },
+            usdt: { name: 'USDT', unit: 'USDT', badge: 'badge-cyan', icon: '💵', hasMarketPrice: true, priceUnit: 'VNĐ/USDT' },
+            savings: { name: 'Tiết kiệm', unit: 'VNĐ', badge: 'badge-blue', icon: '🏦', hasMarketPrice: false },
+            other: { name: 'Khác', unit: '', badge: 'badge-blue', icon: '📦', hasMarketPrice: false }
+        };
+
+        const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+
+        // ============== INITIALIZATION ==============
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderAll();
+        });
+
+        function loadData() {
+            const saved = localStorage.getItem('portfolioData');
+            if (saved) {
+                portfolioData = JSON.parse(saved);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('portfolioData', JSON.stringify(portfolioData));
+        }
+
+        // ============== RENDERING ==============
+        function renderAll() {
+            renderSummary();
+            renderMarketPrices();
+            renderCharts();
+            renderStockTable();
+            renderOtherAssetsTable();
+            renderMonthlyReturns();
+            renderTransactions();
+        }
+
+        function renderSummary() {
+            let totalValue = 0;
+            let totalCost = 0;
+
+            // Calculate stocks
+            portfolioData.stocks.forEach(stock => {
+                totalValue += stock.quantity * stock.marketPrice;
+                totalCost += stock.quantity * stock.costPrice;
+            });
+
+            // Calculate other assets
+            portfolioData.otherAssets.forEach(asset => {
+                if (asset.type === 'savings') {
+                    totalValue += asset.amount;
+                    totalCost += asset.amount;
+                } else {
+                    totalValue += asset.quantity * asset.currentPrice;
+                    totalCost += asset.quantity * asset.costPrice;
+                }
+            });
+
+            const totalProfit = totalValue - totalCost;
+            const profitPercent = totalCost > 0 ? (totalProfit / totalCost * 100) : 0;
+
+            document.getElementById('total-value').textContent = formatVND(totalValue);
+            document.getElementById('total-cost').textContent = formatVND(totalCost);
+            document.getElementById('total-profit').textContent = formatVND(totalProfit);
+            
+            const profitPercentEl = document.getElementById('profit-percent');
+            const profitCard = document.getElementById('profit-card');
+            
+            if (totalProfit >= 0) {
+                profitPercentEl.className = 'summary-change positive';
+                profitPercentEl.innerHTML = `<span>↑</span> ${profitPercent.toFixed(2)}%`;
+                profitCard.className = 'summary-card profit animate-in delay-2';
+            } else {
+                profitPercentEl.className = 'summary-change negative';
+                profitPercentEl.innerHTML = `<span>↓</span> ${Math.abs(profitPercent).toFixed(2)}%`;
+                profitCard.className = 'summary-card loss animate-in delay-2';
+            }
+        }
+
+        // ============== MARKET PRICES ==============
+        function renderMarketPrices() {
+            const container = document.getElementById('market-prices-display');
+            const updatedTimeEl = document.getElementById('prices-updated-time');
+            
+            if (!portfolioData.marketPrices) {
+                portfolioData.marketPrices = {};
+            }
+
+            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
+            let html = '';
+            let latestUpdate = null;
+
+            priceTypes.forEach(type => {
+                const config = assetTypeConfig[type];
+                const priceData = portfolioData.marketPrices[type];
+                
+                if (priceData && priceData.price) {
+                    html += `
+                        <div class="market-price-item">
+                            <span class="market-price-icon">${config.icon}</span>
+                            <div class="market-price-info">
+                                <div class="market-price-name">${config.name}</div>
+                                <div class="market-price-value">
+                                    ${formatNumber(priceData.price)}
+                                    <span class="market-price-unit">${config.priceUnit}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    if (priceData.updatedAt && (!latestUpdate || new Date(priceData.updatedAt) > new Date(latestUpdate))) {
+                        latestUpdate = priceData.updatedAt;
+                    }
+                } else {
+                    html += `
+                        <div class="market-price-item" style="opacity: 0.5;">
+                            <span class="market-price-icon">${config.icon}</span>
+                            <div class="market-price-info">
+                                <div class="market-price-name">${config.name}</div>
+                                <div class="market-price-value" style="color: var(--text-muted);">Chưa cập nhật</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html;
+            
+            if (latestUpdate) {
+                const date = new Date(latestUpdate);
+                updatedTimeEl.textContent = `Cập nhật: ${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}`;
+            } else {
+                updatedTimeEl.textContent = 'Chưa cập nhật giá';
+            }
+        }
+
+        function openMarketPriceModal() {
+            const modal = document.getElementById('market-price-modal');
+            const container = document.getElementById('market-price-fields');
+            
+            if (!portfolioData.marketPrices) {
+                portfolioData.marketPrices = {};
+            }
+
+            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
+            let html = '';
+
+            priceTypes.forEach(type => {
+                const config = assetTypeConfig[type];
+                const priceData = portfolioData.marketPrices[type] || {};
+                
+                html += `
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.75rem;">
+                        <span style="font-size: 1.5rem;">${config.icon}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">${config.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${config.priceUnit}</div>
+                        </div>
+                        <div style="width: 180px;">
+                            <input type="number" class="form-input" id="price-${type}" 
+                                   value="${priceData.price || ''}" 
+                                   placeholder="Nhập giá...">
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Add USD/VND exchange rate for PAXG conversion
+            html += `
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--accent-gold); border-radius: 12px; margin-top: 1rem;">
+                    <span style="font-size: 1.5rem;">💱</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500; margin-bottom: 0.25rem;">Tỷ giá USD/VND</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Dùng để quy đổi PAXG sang VND</div>
+                    </div>
+                    <div style="width: 180px;">
+                        <input type="number" class="form-input" id="price-usdvnd" 
+                               value="${portfolioData.marketPrices.usdvnd?.price || 25000}" 
+                               placeholder="25000">
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function saveMarketPrices() {
+            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
+            const now = new Date().toISOString();
+            
+            if (!portfolioData.marketPrices) {
+                portfolioData.marketPrices = {};
+            }
+
+            priceTypes.forEach(type => {
+                const price = parseFloat(document.getElementById(`price-${type}`).value);
+                if (price && price > 0) {
+                    portfolioData.marketPrices[type] = {
+                        price: price,
+                        updatedAt: now
+                    };
+                }
+            });
+
+            // Save USD/VND rate
+            const usdvnd = parseFloat(document.getElementById('price-usdvnd').value);
+            if (usdvnd && usdvnd > 0) {
+                portfolioData.marketPrices.usdvnd = {
+                    price: usdvnd,
+                    updatedAt: now
+                };
+            }
+
+            // Update all other assets with new prices
+            updateAssetPricesFromMarket();
+
+            saveData();
+            renderAll();
+            closeModal('market-price-modal');
+            showToast('Đã cập nhật giá thị trường!', 'success');
+        }
+
+        function updateAssetPricesFromMarket() {
+            const usdvnd = portfolioData.marketPrices.usdvnd?.price || 25000;
+
+            portfolioData.otherAssets.forEach(asset => {
+                if (portfolioData.marketPrices[asset.type]?.price) {
+                    let newPrice = portfolioData.marketPrices[asset.type].price;
+                    
+                    // Convert PAXG from USD to VND
+                    if (asset.type === 'paxg') {
+                        newPrice = newPrice * usdvnd;
+                    }
+                    
+                    asset.currentPrice = newPrice;
+                }
+            });
+        }
+
+        function renderCharts() {
+            renderAllocationChart();
+            renderStockChart();
+        }
+
+        function renderAllocationChart() {
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            
+            // Calculate allocation
+            const allocation = {};
+            let total = 0;
+
+            // Stocks total
+            let stocksTotal = 0;
+            portfolioData.stocks.forEach(stock => {
+                stocksTotal += stock.quantity * stock.marketPrice;
+            });
+            if (stocksTotal > 0) {
+                allocation['Cổ phiếu'] = stocksTotal;
+                total += stocksTotal;
+            }
+
+            // Other assets by type
+            portfolioData.otherAssets.forEach(asset => {
+                const config = assetTypeConfig[asset.type] || assetTypeConfig.other;
+                const value = asset.type === 'savings' ? asset.amount : asset.quantity * asset.currentPrice;
+                if (!allocation[config.name]) allocation[config.name] = 0;
+                allocation[config.name] += value;
+                total += value;
+            });
+
+            const labels = Object.keys(allocation);
+            const data = Object.values(allocation);
+            const colors = ['#10b981', '#fbbf24', '#f59e0b', '#8b5cf6', '#06b6d4', '#3b82f6', '#f43f5e'];
+
+            // Destroy existing chart
+            if (window.allocationChart && typeof window.allocationChart.destroy === 'function') {
+                window.allocationChart.destroy();
+            }
+
+            if (labels.length === 0) {
+                document.getElementById('allocation-legend').innerHTML = '<div class="empty-state-subtext">Chưa có dữ liệu</div>';
+                return;
+            }
+
+            window.allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: '#1a2235',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percent = (context.raw / total * 100).toFixed(2);
+                                    return `${context.label}: ${formatVND(context.raw)} (${percent}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // Render legend
+            let legendHtml = '';
+            labels.forEach((label, i) => {
+                const percent = (data[i] / total * 100).toFixed(2);
+                legendHtml += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${colors[i]}"></div>
+                        <span>${label}: ${percent}%</span>
+                    </div>
+                `;
+            });
+            document.getElementById('allocation-legend').innerHTML = legendHtml;
+        }
+
+        function renderStockChart() {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            
+            if (portfolioData.stocks.length === 0) {
+                if (window.stockChart && typeof window.stockChart.destroy === 'function') {
+                    window.stockChart.destroy();
+                }
+                document.getElementById('stock-legend').innerHTML = '<div class="empty-state-subtext">Chưa có cổ phiếu</div>';
+                return;
+            }
+
+            let total = 0;
+            portfolioData.stocks.forEach(stock => {
+                total += stock.quantity * stock.marketPrice;
+            });
+
+            const labels = portfolioData.stocks.map(s => s.code);
+            const data = portfolioData.stocks.map(s => s.quantity * s.marketPrice);
+            const colors = ['#3b82f6', '#10b981', '#fbbf24', '#f43f5e', '#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899'];
+
+            if (window.stockChart && typeof window.stockChart.destroy === 'function') {
+                window.stockChart.destroy();
+            }
+
+            window.stockChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: '#1a2235',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percent = (context.raw / total * 100).toFixed(2);
+                                    return `${context.label}: ${formatVND(context.raw)} (${percent}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // Render legend
+            let legendHtml = '';
+            labels.forEach((label, i) => {
+                const percent = (data[i] / total * 100).toFixed(2);
+                legendHtml += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${colors[i % colors.length]}"></div>
+                        <span>${label}: ${percent}%</span>
+                    </div>
+                `;
+            });
+            document.getElementById('stock-legend').innerHTML = legendHtml;
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById('stock-table-body');
+            
+            if (portfolioData.stocks.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📈</div>
+                                <div class="empty-state-text">Chưa có cổ phiếu nào</div>
+                                <div class="empty-state-subtext">Nhấn "Thêm cổ phiếu" để bắt đầu</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Calculate total for weight
+            let totalValue = 0;
+            portfolioData.stocks.forEach(s => totalValue += s.quantity * s.marketPrice);
+
+            let html = '';
+            portfolioData.stocks.forEach((stock, index) => {
+                const costValue = stock.quantity * stock.costPrice;
+                const marketValue = stock.quantity * stock.marketPrice;
+                const profit = marketValue - costValue;
+                const profitPercent = costValue > 0 ? (profit / costValue * 100) : 0;
+                const weight = totalValue > 0 ? (marketValue / totalValue * 100) : 0;
+
+                html += `
+                    <tr>
+                        <td>
+                            <div class="stock-name">
+                                <div class="stock-code">${stock.code}</div>
+                                <div class="stock-company">${stock.company || ''}</div>
+                            </div>
+                        </td>
+                        <td>${weight.toFixed(2)}%</td>
+                        <td>${formatNumber(stock.quantity)}</td>
+                        <td>${formatNumber(stock.costPrice)}</td>
+                        <td>${formatNumber(stock.marketPrice)}</td>
+                        <td>${formatVND(costValue)}</td>
+                        <td>${formatVND(marketValue)}</td>
+                        <td class="${profit >= 0 ? 'positive' : 'negative'}">${formatVND(profit)}</td>
+                        <td class="${profitPercent >= 0 ? 'positive' : 'negative'}">${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%</td>
+                        <td>
+                            <button class="action-btn" onclick="editStock(${index})" title="Sửa">✏️</button>
+                            <button class="action-btn delete" onclick="deleteStock(${index})" title="Xoá">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderOtherAssetsTable() {
+            const tbody = document.getElementById('other-table-body');
+            
+            if (portfolioData.otherAssets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💎</div>
+                                <div class="empty-state-text">Chưa có tài sản nào</div>
+                                <div class="empty-state-subtext">Nhấn "Thêm tài sản" để bắt đầu</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Calculate total for weight
+            let totalValue = 0;
+            portfolioData.otherAssets.forEach(a => {
+                totalValue += a.type === 'savings' ? a.amount : a.quantity * a.currentPrice;
+            });
+
+            let html = '';
+            portfolioData.otherAssets.forEach((asset, index) => {
+                const config = assetTypeConfig[asset.type] || assetTypeConfig.other;
+                
+                if (asset.type === 'savings') {
+                    const weight = totalValue > 0 ? (asset.amount / totalValue * 100) : 0;
+                    html += `
+                        <tr>
+                            <td>
+                                <span class="badge ${config.badge}">${config.icon} ${asset.name}</span>
+                            </td>
+                            <td>${weight.toFixed(2)}%</td>
+                            <td colspan="2">${formatVND(asset.amount)}</td>
+                            <td colspan="4">Lãi suất: ${asset.rate}%/năm</td>
+                            <td class="neutral-text">—</td>
+                            <td class="neutral-text">—</td>
+                            <td>
+                                <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
+                                <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const costValue = asset.quantity * asset.costPrice;
+                    const currentValue = asset.quantity * asset.currentPrice;
+                    const profit = currentValue - costValue;
+                    const profitPercent = costValue > 0 ? (profit / costValue * 100) : 0;
+                    const weight = totalValue > 0 ? (currentValue / totalValue * 100) : 0;
+
+                    html += `
+                        <tr>
+                            <td>
+                                <span class="badge ${config.badge}">${config.icon} ${asset.name}</span>
+                            </td>
+                            <td>${weight.toFixed(2)}%</td>
+                            <td>${formatNumber(asset.quantity)}</td>
+                            <td>${asset.unit}</td>
+                            <td>${formatNumber(asset.costPrice)}</td>
+                            <td>${formatNumber(asset.currentPrice)}</td>
+                            <td>${formatVND(costValue)}</td>
+                            <td>${formatVND(currentValue)}</td>
+                            <td class="${profit >= 0 ? 'positive' : 'negative'}">${formatVND(profit)}</td>
+                            <td class="${profitPercent >= 0 ? 'positive' : 'negative'}">${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%</td>
+                            <td>
+                                <button class="action-btn" onclick="editOtherAsset(${index})" title="Sửa">✏️</button>
+                                <button class="action-btn delete" onclick="deleteOtherAsset(${index})" title="Xoá">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderMonthlyReturns() {
+            const year = document.getElementById('year-select').value;
+            const grid = document.getElementById('monthly-grid');
+            
+            if (!portfolioData.monthlyReturns[year]) {
+                portfolioData.monthlyReturns[year] = {};
+            }
+
+            let html = '';
+            months.forEach((month, i) => {
+                const value = portfolioData.monthlyReturns[year][i + 1] || 0;
+                const colorClass = value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral-text';
+                html += `
+                    <div class="month-card">
+                        <div class="month-name">${month}</div>
+                        <div class="month-value ${colorClass}">${value > 0 ? '+' : ''}${value.toFixed(2)}%</div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function renderTransactions() {
+            const tbody = document.getElementById('history-table-body');
+            
+            if (!portfolioData.transactions || portfolioData.transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📜</div>
+                                <div class="empty-state-text">Chưa có lịch sử giao dịch</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            portfolioData.transactions.slice().reverse().forEach(tx => {
+                html += `
+                    <tr>
+                        <td>${tx.date}</td>
+                        <td><span class="badge badge-blue">${tx.type}</span></td>
+                        <td>${tx.asset}</td>
+                        <td>${tx.action}</td>
+                        <td>${formatNumber(tx.quantity)}</td>
+                        <td>${formatNumber(tx.price)}</td>
+                        <td>${formatVND(tx.total)}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ============== MODALS ==============
+        function openAddModal(type = null) {
+            const modal = document.getElementById('add-modal');
+            modal.classList.add('active');
+            
+            // Reset form
+            document.getElementById('asset-type').value = type === 'stock' ? 'stock' : (type === 'other' ? 'gold' : 'stock');
+            toggleAssetFields();
+            
+            // Clear inputs
+            document.querySelectorAll('#add-modal input').forEach(input => {
+                if (input.type !== 'date') input.value = '';
+            });
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('transaction-date').value = today;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function toggleAssetFields() {
+            const type = document.getElementById('asset-type').value;
+            document.getElementById('stock-fields').style.display = type === 'stock' ? 'block' : 'none';
+            document.getElementById('other-fields').style.display = ['gold', 'gold_sjc', 'paxg', 'usdt', 'other'].includes(type) ? 'block' : 'none';
+            document.getElementById('savings-fields').style.display = type === 'savings' ? 'block' : 'none';
+
+            // Set default unit
+            if (type !== 'stock' && type !== 'savings') {
+                const config = assetTypeConfig[type];
+                document.getElementById('asset-unit').value = config.unit;
+                document.getElementById('asset-name').value = config.name;
+            }
+        }
+
+        function saveAsset() {
+            const type = document.getElementById('asset-type').value;
+            const dateInput = document.getElementById('transaction-date').value;
+            const transactionDate = dateInput ? new Date(dateInput).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN');
+
+            if (type === 'stock') {
+                const code = document.getElementById('stock-code').value.trim().toUpperCase();
+                const company = document.getElementById('stock-company').value.trim();
+                const quantity = parseInt(document.getElementById('stock-quantity').value) || 0;
+                const costPrice = parseFloat(document.getElementById('stock-cost').value) || 0;
+                const marketPrice = parseFloat(document.getElementById('stock-market').value) || 0;
+
+                if (!code || quantity <= 0) {
+                    showToast('Vui lòng nhập mã CK và khối lượng', 'error');
+                    return;
+                }
+
+                // Check if stock exists
+                const existingIndex = portfolioData.stocks.findIndex(s => s.code === code);
+                if (existingIndex >= 0) {
+                    // Update existing
+                    const existing = portfolioData.stocks[existingIndex];
+                    const totalQty = existing.quantity + quantity;
+                    const avgCost = (existing.quantity * existing.costPrice + quantity * costPrice) / totalQty;
+                    existing.quantity = totalQty;
+                    existing.costPrice = avgCost;
+                    existing.marketPrice = marketPrice || existing.marketPrice;
+                    existing.company = company || existing.company;
+                } else {
+                    portfolioData.stocks.push({ code, company, quantity, costPrice, marketPrice });
+                }
+
+                // Add transaction
+                portfolioData.transactions.push({
+                    date: transactionDate,
+                    type: 'Cổ phiếu',
+                    asset: code,
+                    action: 'Mua',
+                    quantity,
+                    price: costPrice,
+                    total: quantity * costPrice
+                });
+
+            } else if (type === 'savings') {
+                const name = document.getElementById('savings-name').value.trim() || 'Tiết kiệm';
+                const amount = parseFloat(document.getElementById('savings-amount').value) || 0;
+                const rate = parseFloat(document.getElementById('savings-rate').value) || 0;
+
+                if (amount <= 0) {
+                    showToast('Vui lòng nhập số tiền gửi', 'error');
+                    return;
+                }
+
+                portfolioData.otherAssets.push({ type, name, amount, rate, unit: 'VNĐ' });
+
+                portfolioData.transactions.push({
+                    date: transactionDate,
+                    type: 'Tiết kiệm',
+                    asset: name,
+                    action: 'Gửi',
+                    quantity: 1,
+                    price: amount,
+                    total: amount
+                });
+
+            } else {
+                const name = document.getElementById('asset-name').value.trim();
+                const quantity = parseFloat(document.getElementById('asset-quantity').value) || 0;
+                const unit = document.getElementById('asset-unit').value.trim();
+                const costPrice = parseFloat(document.getElementById('asset-cost').value) || 0;
+                const currentPrice = parseFloat(document.getElementById('asset-price').value) || 0;
+
+                if (!name || quantity <= 0) {
+                    showToast('Vui lòng nhập tên và số lượng', 'error');
+                    return;
+                }
+
+                portfolioData.otherAssets.push({ type, name, quantity, unit, costPrice, currentPrice });
+
+                portfolioData.transactions.push({
+                    date: transactionDate,
+                    type: assetTypeConfig[type]?.name || 'Khác',
+                    asset: name,
+                    action: 'Mua',
+                    quantity,
+                    price: costPrice,
+                    total: quantity * costPrice
+                });
+            }
+
+            saveData();
+            renderAll();
+            closeModal('add-modal');
+            showToast('Đã thêm tài sản thành công!', 'success');
+        }
+
+        function editStock(index) {
+            const stock = portfolioData.stocks[index];
+            const body = document.getElementById('edit-modal-body');
+            
+            body.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">Mã chứng khoán</label>
+                    <input type="text" class="form-input" id="edit-stock-code" value="${stock.code}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tên công ty</label>
+                    <input type="text" class="form-input" id="edit-stock-company" value="${stock.company || ''}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Khối lượng</label>
+                        <input type="number" class="form-input" id="edit-stock-quantity" value="${stock.quantity}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Giá vốn</label>
+                        <input type="number" class="form-input" id="edit-stock-cost" value="${stock.costPrice}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Giá thị trường</label>
+                    <input type="number" class="form-input" id="edit-stock-market" value="${stock.marketPrice}">
+                </div>
+            `;
+
+            document.getElementById('edit-save-btn').onclick = () => {
+                portfolioData.stocks[index] = {
+                    code: stock.code,
+                    company: document.getElementById('edit-stock-company').value.trim(),
+                    quantity: parseInt(document.getElementById('edit-stock-quantity').value) || 0,
+                    costPrice: parseFloat(document.getElementById('edit-stock-cost').value) || 0,
+                    marketPrice: parseFloat(document.getElementById('edit-stock-market').value) || 0
+                };
+                saveData();
+                renderAll();
+                closeModal('edit-modal');
+                showToast('Đã cập nhật cổ phiếu!', 'success');
+            };
+
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        function deleteStock(index) {
+            if (confirm('Bạn có chắc muốn xoá cổ phiếu này?')) {
+                portfolioData.stocks.splice(index, 1);
+                saveData();
+                renderAll();
+                showToast('Đã xoá cổ phiếu!', 'success');
+            }
+        }
+
+        function editOtherAsset(index) {
+            const asset = portfolioData.otherAssets[index];
+            const body = document.getElementById('edit-modal-body');
+            
+            if (asset.type === 'savings') {
+                body.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Tên khoản tiết kiệm</label>
+                        <input type="text" class="form-input" id="edit-asset-name" value="${asset.name}">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Số tiền gửi</label>
+                            <input type="number" class="form-input" id="edit-asset-amount" value="${asset.amount}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lãi suất (%/năm)</label>
+                            <input type="number" step="0.01" class="form-input" id="edit-asset-rate" value="${asset.rate}">
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('edit-save-btn').onclick = () => {
+                    portfolioData.otherAssets[index] = {
+                        type: 'savings',
+                        name: document.getElementById('edit-asset-name').value.trim(),
+                        amount: parseFloat(document.getElementById('edit-asset-amount').value) || 0,
+                        rate: parseFloat(document.getElementById('edit-asset-rate').value) || 0,
+                        unit: 'VNĐ'
+                    };
+                    saveData();
+                    renderAll();
+                    closeModal('edit-modal');
+                    showToast('Đã cập nhật tài sản!', 'success');
+                };
+            } else {
+                body.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Tên tài sản</label>
+                        <input type="text" class="form-input" id="edit-asset-name" value="${asset.name}">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Số lượng</label>
+                            <input type="number" step="0.01" class="form-input" id="edit-asset-quantity" value="${asset.quantity}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Đơn vị</label>
+                            <input type="text" class="form-input" id="edit-asset-unit" value="${asset.unit}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Giá vốn / đơn vị</label>
+                            <input type="number" class="form-input" id="edit-asset-cost" value="${asset.costPrice}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Giá hiện tại / đơn vị</label>
+                            <input type="number" class="form-input" id="edit-asset-price" value="${asset.currentPrice}">
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('edit-save-btn').onclick = () => {
+                    portfolioData.otherAssets[index] = {
+                        type: asset.type,
+                        name: document.getElementById('edit-asset-name').value.trim(),
+                        quantity: parseFloat(document.getElementById('edit-asset-quantity').value) || 0,
+                        unit: document.getElementById('edit-asset-unit').value.trim(),
+                        costPrice: parseFloat(document.getElementById('edit-asset-cost').value) || 0,
+                        currentPrice: parseFloat(document.getElementById('edit-asset-price').value) || 0
+                    };
+                    saveData();
+                    renderAll();
+                    closeModal('edit-modal');
+                    showToast('Đã cập nhật tài sản!', 'success');
+                };
+            }
+
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        function deleteOtherAsset(index) {
+            if (confirm('Bạn có chắc muốn xoá tài sản này?')) {
+                portfolioData.otherAssets.splice(index, 1);
+                saveData();
+                renderAll();
+                showToast('Đã xoá tài sản!', 'success');
+            }
+        }
+
+        function openMonthlyModal() {
+            const year = document.getElementById('year-select').value;
+            const body = document.getElementById('monthly-edit-body');
+            
+            if (!portfolioData.monthlyReturns[year]) {
+                portfolioData.monthlyReturns[year] = {};
+            }
+
+            let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">';
+            months.forEach((month, i) => {
+                const value = portfolioData.monthlyReturns[year][i + 1] || 0;
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">${month}</label>
+                        <input type="number" step="0.01" class="form-input" id="monthly-${i+1}" value="${value}" placeholder="0">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            body.innerHTML = html;
+
+            document.getElementById('monthly-modal').classList.add('active');
+        }
+
+        function saveMonthlyReturns() {
+            const year = document.getElementById('year-select').value;
+            portfolioData.monthlyReturns[year] = {};
+            
+            months.forEach((_, i) => {
+                const value = parseFloat(document.getElementById(`monthly-${i+1}`).value) || 0;
+                portfolioData.monthlyReturns[year][i + 1] = value;
+            });
+
+            saveData();
+            renderMonthlyReturns();
+            closeModal('monthly-modal');
+            showToast('Đã cập nhật lợi nhuận tháng!', 'success');
+        }
+
+        function updateMonthlyView() {
+            renderMonthlyReturns();
+        }
+
+        // ============== TABS ==============
+        function switchTab(btn, tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            
+            document.getElementById('monthly-content').style.display = tab === 'monthly' ? 'block' : 'none';
+            document.getElementById('history-content').style.display = tab === 'history' ? 'block' : 'none';
+            document.getElementById('performance-content').style.display = tab === 'performance' ? 'block' : 'none';
+            
+            if (tab === 'performance') {
+                renderPerformanceView();
+            }
+        }
+
+        // ============== PERFORMANCE TRACKING ==============
+        function getCurrentAssetValues() {
+            const values = {
+                stock: { value: 0, cost: 0 },
+                gold: { value: 0, cost: 0 },
+                gold_sjc: { value: 0, cost: 0 },
+                paxg: { value: 0, cost: 0 },
+                usdt: { value: 0, cost: 0 },
+                savings: { value: 0, cost: 0 },
+                total: { value: 0, cost: 0 }
+            };
+
+            // Calculate stocks
+            portfolioData.stocks.forEach(stock => {
+                values.stock.value += stock.quantity * stock.marketPrice;
+                values.stock.cost += stock.quantity * stock.costPrice;
+            });
+
+            // Calculate other assets
+            portfolioData.otherAssets.forEach(asset => {
+                if (asset.type === 'savings') {
+                    values.savings.value += asset.amount;
+                    values.savings.cost += asset.amount;
+                } else if (values[asset.type]) {
+                    values[asset.type].value += asset.quantity * asset.currentPrice;
+                    values[asset.type].cost += asset.quantity * asset.costPrice;
+                }
+            });
+
+            // Calculate total
+            Object.keys(values).forEach(key => {
+                if (key !== 'total') {
+                    values.total.value += values[key].value;
+                    values.total.cost += values[key].cost;
+                }
+            });
+
+            return values;
+        }
+
+        function calculateMonthlyReturns(year) {
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            const returns = {};
+
+            assetTypes.forEach(type => {
+                returns[type] = {};
+                for (let m = 1; m <= 12; m++) {
+                    const currentKey = `${year}-${String(m).padStart(2, '0')}`;
+                    const prevMonth = m === 1 ? 12 : m - 1;
+                    const prevYear = m === 1 ? parseInt(year) - 1 : year;
+                    const prevKey = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+
+                    const currentSnapshot = portfolioData.monthlySnapshots?.[currentKey];
+                    const prevSnapshot = portfolioData.monthlySnapshots?.[prevKey];
+
+                    if (currentSnapshot && currentSnapshot[type] && prevSnapshot && prevSnapshot[type]) {
+                        const currentValue = currentSnapshot[type].value;
+                        const prevValue = prevSnapshot[type].value;
+                        
+                        if (prevValue > 0) {
+                            returns[type][m] = ((currentValue - prevValue) / prevValue) * 100;
+                        }
+                    }
+                }
+            });
+
+            // Calculate total returns
+            returns.total = {};
+            for (let m = 1; m <= 12; m++) {
+                const currentKey = `${year}-${String(m).padStart(2, '0')}`;
+                const prevMonth = m === 1 ? 12 : m - 1;
+                const prevYear = m === 1 ? parseInt(year) - 1 : year;
+                const prevKey = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+
+                const currentSnapshot = portfolioData.monthlySnapshots?.[currentKey];
+                const prevSnapshot = portfolioData.monthlySnapshots?.[prevKey];
+
+                if (currentSnapshot?.total && prevSnapshot?.total) {
+                    const currentValue = currentSnapshot.total.value;
+                    const prevValue = prevSnapshot.total.value;
+                    
+                    if (prevValue > 0) {
+                        returns.total[m] = ((currentValue - prevValue) / prevValue) * 100;
+                    }
+                }
+            }
+
+            return returns;
+        }
+
+        function renderPerformanceView() {
+            const year = document.getElementById('perf-year-select').value;
+            const tbody = document.getElementById('performance-table-body');
+            
+            const returns = calculateMonthlyReturns(year);
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            const colors = {
+                stock: '#3b82f6',
+                gold: '#fbbf24',
+                gold_sjc: '#f59e0b',
+                paxg: '#8b5cf6',
+                usdt: '#06b6d4',
+                savings: '#10b981'
+            };
+
+            let html = '';
+            const chartData = {};
+
+            assetTypes.forEach(type => {
+                const config = assetTypeConfig[type];
+                const typeReturns = returns[type] || {};
+                
+                let yearTotal = 0;
+                let hasData = false;
+                
+                html += `<tr>
+                    <td><span class="badge ${config.badge}">${config.icon} ${config.name}</span></td>`;
+                
+                for (let m = 1; m <= 12; m++) {
+                    const value = typeReturns[m];
+                    if (value !== undefined && value !== null) {
+                        hasData = true;
+                        yearTotal += value;
+                        const colorClass = value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral-text';
+                        html += `<td class="${colorClass}">${value > 0 ? '+' : ''}${value.toFixed(2)}%</td>`;
+                    } else {
+                        html += `<td class="neutral-text">—</td>`;
+                    }
+                }
+                
+                // Year total (compounded would be more accurate, but sum is simpler)
+                if (hasData) {
+                    const colorClass = yearTotal > 0 ? 'positive' : yearTotal < 0 ? 'negative' : 'neutral-text';
+                    html += `<td class="${colorClass}" style="font-weight: 600;">${yearTotal > 0 ? '+' : ''}${yearTotal.toFixed(2)}%</td>`;
+                } else {
+                    html += `<td class="neutral-text">—</td>`;
+                }
+                
+                html += `</tr>`;
+                
+                // Prepare chart data
+                chartData[type] = {
+                    label: config.name,
+                    color: colors[type],
+                    data: []
+                };
+                for (let m = 1; m <= 12; m++) {
+                    chartData[type].data.push(typeReturns[m] !== undefined ? typeReturns[m] : null);
+                }
+            });
+
+            // Add total row
+            const totalReturns = returns.total || {};
+            html += `<tr style="background: var(--bg-secondary);">
+                <td><strong>📊 Tổng danh mục</strong></td>`;
+            
+            let grandTotal = 0;
+            let hasGrandData = false;
+            for (let m = 1; m <= 12; m++) {
+                const value = totalReturns[m];
+                if (value !== undefined && value !== null) {
+                    hasGrandData = true;
+                    grandTotal += value;
+                    const colorClass = value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral-text';
+                    html += `<td class="${colorClass}" style="font-weight: 600;">${value > 0 ? '+' : ''}${value.toFixed(2)}%</td>`;
+                } else {
+                    html += `<td class="neutral-text">—</td>`;
+                }
+            }
+            
+            if (hasGrandData) {
+                const grandColorClass = grandTotal > 0 ? 'positive' : grandTotal < 0 ? 'negative' : 'neutral-text';
+                html += `<td class="${grandColorClass}" style="font-weight: 700;">${grandTotal > 0 ? '+' : ''}${grandTotal.toFixed(2)}%</td>`;
+            } else {
+                html += `<td class="neutral-text">—</td>`;
+            }
+            html += `</tr>`;
+
+            tbody.innerHTML = html;
+
+            // Render chart
+            renderPerformanceChart(chartData);
+            
+            // Render snapshot history
+            renderSnapshotHistory(year);
+        }
+
+        function renderSnapshotHistory(year) {
+            const tbody = document.getElementById('snapshot-history-body');
+            if (!tbody) return;
+
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            let html = '';
+            
+            // Get all snapshots for the year
+            const yearSnapshots = [];
+            for (let m = 1; m <= 12; m++) {
+                const key = `${year}-${String(m).padStart(2, '0')}`;
+                if (portfolioData.monthlySnapshots?.[key]) {
+                    yearSnapshots.push({ month: m, key, data: portfolioData.monthlySnapshots[key] });
+                }
+            }
+
+            if (yearSnapshots.length === 0) {
+                html = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    Chưa có dữ liệu chốt giá trị. Nhấn "📸 Chốt giá trị tháng" để bắt đầu.
+                </td></tr>`;
+            } else {
+                yearSnapshots.forEach(({ month, key, data }) => {
+                    html += `<tr>
+                        <td><strong>Tháng ${month}/${year}</strong></td>`;
+                    
+                    assetTypes.forEach(type => {
+                        const value = data[type]?.value || 0;
+                        html += `<td>${value > 0 ? formatVND(value) : '—'}</td>`;
+                    });
+                    
+                    html += `<td style="font-weight: 600;">${formatVND(data.total?.value || 0)}</td>`;
+                    html += `<td><button class="action-btn delete" onclick="deleteSnapshot('${key}')" title="Xoá">🗑️</button></td>`;
+                    html += `</tr>`;
+                });
+            }
+
+            tbody.innerHTML = html;
+        }
+
+        function renderPerformanceChart(chartData) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            if (window.performanceChart && typeof window.performanceChart.destroy === 'function') {
+                window.performanceChart.destroy();
+            }
+
+            const datasets = [];
+            Object.keys(chartData).forEach(type => {
+                const data = chartData[type];
+                // Only show datasets that have some data
+                if (data.data.some(v => v !== null)) {
+                    datasets.push({
+                        label: data.label,
+                        data: data.data,
+                        borderColor: data.color,
+                        backgroundColor: data.color + '20',
+                        tension: 0.3,
+                        fill: false,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    });
+                }
+            });
+
+            window.performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.raw === null) return null;
+                                    return `${context.dataset.label}: ${context.raw > 0 ? '+' : ''}${context.raw.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#374151' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: '#374151' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function openSnapshotModal() {
+            const modal = document.getElementById('snapshot-modal');
+            
+            // Set default month to current month
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('snapshot-month').value = currentMonth;
+            
+            // Load current values
+            loadCurrentValues();
+            
+            modal.classList.add('active');
+        }
+
+        function loadCurrentValues() {
+            const values = getCurrentAssetValues();
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            
+            let html = '';
+            assetTypes.forEach(type => {
+                const config = assetTypeConfig[type];
+                const typeValue = values[type];
+                
+                html += `
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.75rem;">
+                        <div style="flex: 1;">
+                            <span class="badge ${config.badge}">${config.icon} ${config.name}</span>
+                        </div>
+                        <div style="flex: 2;">
+                            <label class="form-label" style="font-size: 0.75rem;">Giá trị (VNĐ)</label>
+                            <input type="number" class="form-input" id="snap-${type}-value" value="${typeValue.value}" placeholder="0">
+                        </div>
+                        <div style="flex: 2;">
+                            <label class="form-label" style="font-size: 0.75rem;">Giá vốn (VNĐ)</label>
+                            <input type="number" class="form-input" id="snap-${type}-cost" value="${typeValue.cost}" placeholder="0">
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Total
+            html += `
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--accent-gold); background: rgba(251, 191, 36, 0.1); border: 1px solid var(--accent-gold); border-radius: 12px; margin-top: 1rem;">
+                    <div style="flex: 1;">
+                        <strong>📊 Tổng cộng</strong>
+                    </div>
+                    <div style="flex: 2;">
+                        <span class="form-label" style="font-size: 0.75rem;">Giá trị</span>
+                        <div style="font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 600;" id="snap-total-value">${formatVND(values.total.value)}</div>
+                    </div>
+                    <div style="flex: 2;">
+                        <span class="form-label" style="font-size: 0.75rem;">Giá vốn</span>
+                        <div style="font-family: 'JetBrains Mono'; font-size: 1.1rem;" id="snap-total-cost">${formatVND(values.total.cost)}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('snapshot-fields').innerHTML = html;
+
+            // Add listeners to update total
+            assetTypes.forEach(type => {
+                document.getElementById(`snap-${type}-value`).addEventListener('input', updateSnapshotTotal);
+                document.getElementById(`snap-${type}-cost`).addEventListener('input', updateSnapshotTotal);
+            });
+        }
+
+        function updateSnapshotTotal() {
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            let totalValue = 0;
+            let totalCost = 0;
+
+            assetTypes.forEach(type => {
+                totalValue += parseFloat(document.getElementById(`snap-${type}-value`).value) || 0;
+                totalCost += parseFloat(document.getElementById(`snap-${type}-cost`).value) || 0;
+            });
+
+            document.getElementById('snap-total-value').textContent = formatVND(totalValue);
+            document.getElementById('snap-total-cost').textContent = formatVND(totalCost);
+        }
+
+        function saveSnapshot() {
+            const monthInput = document.getElementById('snapshot-month').value;
+            if (!monthInput) {
+                showToast('Vui lòng chọn tháng', 'error');
+                return;
+            }
+
+            const assetTypes = ['stock', 'gold', 'gold_sjc', 'paxg', 'usdt', 'savings'];
+            
+            if (!portfolioData.monthlySnapshots) {
+                portfolioData.monthlySnapshots = {};
+            }
+
+            const snapshot = {
+                total: { value: 0, cost: 0 }
+            };
+
+            assetTypes.forEach(type => {
+                const value = parseFloat(document.getElementById(`snap-${type}-value`).value) || 0;
+                const cost = parseFloat(document.getElementById(`snap-${type}-cost`).value) || 0;
+                snapshot[type] = { value, cost };
+                snapshot.total.value += value;
+                snapshot.total.cost += cost;
+            });
+
+            portfolioData.monthlySnapshots[monthInput] = snapshot;
+
+            saveData();
+            renderPerformanceView();
+            closeModal('snapshot-modal');
+            showToast(`Đã chốt giá trị tháng ${monthInput}!`, 'success');
+        }
+
+        function deleteSnapshot(key) {
+            if (confirm(`Bạn có chắc muốn xoá dữ liệu chốt giá trị ${key}?`)) {
+                delete portfolioData.monthlySnapshots[key];
+                saveData();
+                renderPerformanceView();
+                showToast('Đã xoá dữ liệu!', 'success');
+            }
+        }
+
+        // ============== IMPORT/EXPORT ==============
+        function exportCSV() {
+            let csv = 'Loại,Mã/Tên,Công ty,Số lượng,Đơn vị,Giá vốn,Giá hiện tại,Lãi suất\n';
+
+            portfolioData.stocks.forEach(stock => {
+                csv += `stock,${stock.code},${stock.company || ''},${stock.quantity},,${stock.costPrice},${stock.marketPrice},\n`;
+            });
+
+            portfolioData.otherAssets.forEach(asset => {
+                if (asset.type === 'savings') {
+                    csv += `${asset.type},${asset.name},,${asset.amount},VNĐ,,,${asset.rate}\n`;
+                } else {
+                    csv += `${asset.type},${asset.name},,${asset.quantity},${asset.unit},${asset.costPrice},${asset.currentPrice},\n`;
+                }
+            });
+
+            // Add market prices
+            csv += '\nGiá thị trường\n';
+            csv += 'Loại,Giá,Ngày cập nhật\n';
+            if (portfolioData.marketPrices) {
+                Object.keys(portfolioData.marketPrices).forEach(type => {
+                    const data = portfolioData.marketPrices[type];
+                    csv += `${type},${data.price},${data.updatedAt || ''}\n`;
+                });
+            }
+
+            // Add monthly returns
+            csv += '\nLợi nhuận theo tháng\n';
+            csv += 'Năm,Tháng,Tỷ suất (%)\n';
+            Object.keys(portfolioData.monthlyReturns).forEach(year => {
+                Object.keys(portfolioData.monthlyReturns[year]).forEach(month => {
+                    csv += `${year},${month},${portfolioData.monthlyReturns[year][month]}\n`;
+                });
+            });
+
+            // Add monthly snapshots
+            csv += '\nChốt giá trị theo tháng\n';
+            csv += 'Tháng,Loại tài sản,Giá trị,Giá vốn\n';
+            if (portfolioData.monthlySnapshots) {
+                Object.keys(portfolioData.monthlySnapshots).sort().forEach(monthKey => {
+                    const snapshot = portfolioData.monthlySnapshots[monthKey];
+                    Object.keys(snapshot).forEach(type => {
+                        csv += `${monthKey},${type},${snapshot[type].value},${snapshot[type].cost}\n`;
+                    });
+                });
+            }
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `portfolio_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Đã xuất file CSV!', 'success');
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    
+                    // Reset data
+                    portfolioData.stocks = [];
+                    portfolioData.otherAssets = [];
+                    portfolioData.monthlySnapshots = {};
+                    portfolioData.marketPrices = {};
+                    
+                    let currentSection = 'assets';
+                    
+                    lines.forEach((line, index) => {
+                        if (index === 0) return; // Skip header
+                        if (line.includes('Giá thị trường')) {
+                            currentSection = 'marketPrices';
+                            return;
+                        }
+                        if (line.includes('Lợi nhuận theo tháng')) {
+                            currentSection = 'monthly';
+                            return;
+                        }
+                        if (line.includes('Chốt giá trị theo tháng')) {
+                            currentSection = 'snapshots';
+                            return;
+                        }
+                        if (line.includes('Năm,Tháng') || line.includes('Tháng,Loại tài sản') || line.includes('Loại,Giá,Ngày')) return; // Skip section headers
+                        
+                        const cols = line.split(',').map(c => c.trim());
+                        if (cols.length < 2 || !cols[0]) return;
+
+                        if (currentSection === 'marketPrices') {
+                            const [type, price, updatedAt] = cols;
+                            portfolioData.marketPrices[type] = {
+                                price: parseFloat(price) || 0,
+                                updatedAt: updatedAt || new Date().toISOString()
+                            };
+                        } else if (currentSection === 'monthly') {
+                            const [year, month, rate] = cols;
+                            if (!portfolioData.monthlyReturns[year]) {
+                                portfolioData.monthlyReturns[year] = {};
+                            }
+                            portfolioData.monthlyReturns[year][month] = parseFloat(rate) || 0;
+                        } else if (currentSection === 'snapshots') {
+                            const [monthKey, type, value, cost] = cols;
+                            if (!portfolioData.monthlySnapshots[monthKey]) {
+                                portfolioData.monthlySnapshots[monthKey] = {};
+                            }
+                            portfolioData.monthlySnapshots[monthKey][type] = {
+                                value: parseFloat(value) || 0,
+                                cost: parseFloat(cost) || 0
+                            };
+                        } else {
+                            const [type, nameOrCode, company, quantity, unit, costPrice, currentPrice, rate] = cols;
+                            
+                            if (type === 'stock') {
+                                portfolioData.stocks.push({
+                                    code: nameOrCode,
+                                    company: company || '',
+                                    quantity: parseInt(quantity) || 0,
+                                    costPrice: parseFloat(costPrice) || 0,
+                                    marketPrice: parseFloat(currentPrice) || 0
+                                });
+                            } else if (type === 'savings') {
+                                portfolioData.otherAssets.push({
+                                    type: 'savings',
+                                    name: nameOrCode,
+                                    amount: parseFloat(quantity) || 0,
+                                    rate: parseFloat(rate) || 0,
+                                    unit: 'VNĐ'
+                                });
+                            } else {
+                                portfolioData.otherAssets.push({
+                                    type: type,
+                                    name: nameOrCode,
+                                    quantity: parseFloat(quantity) || 0,
+                                    unit: unit || '',
+                                    costPrice: parseFloat(costPrice) || 0,
+                                    currentPrice: parseFloat(currentPrice) || 0
+                                });
+                            }
+                        }
+                    });
+
+                    saveData();
+                    renderAll();
+                    showToast('Đã nhập dữ liệu thành công!', 'success');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Lỗi khi đọc file CSV!', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ============== UTILITIES ==============
+        function formatVND(num) {
+            if (num === undefined || num === null) return '0 ₫';
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                maximumFractionDigits: 0
+            }).format(num);
+        }
+
+        function formatNumber(num) {
+            if (num === undefined || num === null) return '0';
+            return new Intl.NumberFormat('vi-VN').format(num);
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${type === 'success' ? '✅' : '❌'}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
