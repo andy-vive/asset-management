@@ -1136,9 +1136,15 @@
                     
                     <!-- USDT to VND Converter for Crypto -->
                     <div id="usdt-converter" style="display: none; margin-bottom: 1rem; padding: 1rem; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--accent-purple); border-radius: 12px;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                            <span>🔄</span>
-                            <strong style="font-size: 0.875rem;">Chuyển đổi USDT → VND</strong>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>🔄</span>
+                                <strong style="font-size: 0.875rem;">Chuyển đổi USDT → VND</strong>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                Tỷ giá: <strong id="usdt-rate-display" style="color: var(--accent-cyan);">25,000</strong> VND/USDT
+                                <button onclick="openMarketPriceModal()" style="background: none; border: none; color: var(--accent-gold); cursor: pointer; font-size: 0.75rem; margin-left: 0.5rem;">✏️ Sửa</button>
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="margin-bottom: 0;">
@@ -1146,22 +1152,11 @@
                                 <input type="number" step="0.01" class="form-input" id="cost-usdt" placeholder="0" oninput="convertUsdtToVnd('cost')">
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label">Tỷ giá USDT/VND</label>
-                                <input type="number" class="form-input" id="usdt-rate" placeholder="25000" oninput="convertUsdtToVnd('cost'); convertUsdtToVnd('price')">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-top: 0.75rem;">
-                            <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label">Giá hiện tại (USDT)</label>
                                 <input type="number" step="0.01" class="form-input" id="price-usdt" placeholder="0" oninput="convertUsdtToVnd('price')">
                             </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label">&nbsp;</label>
-                                <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; font-size: 0.8rem; color: var(--text-muted);">
-                                    Giá VND sẽ được tự động tính
-                                </div>
-                            </div>
                         </div>
+                        <input type="hidden" id="usdt-rate">
                     </div>
 
                     <div class="form-row">
@@ -2001,10 +1996,12 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transaction-date').value = today;
             
-            // Set default USDT rate
+            // Set default USDT rate from market prices
             const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
             const usdtRateEl = document.getElementById('usdt-rate');
+            const usdtRateDisplayEl = document.getElementById('usdt-rate-display');
             if (usdtRateEl) usdtRateEl.value = savedRate;
+            if (usdtRateDisplayEl) usdtRateDisplayEl.textContent = formatNumber(savedRate);
             
             toggleAssetFields();
         }
@@ -2027,10 +2024,11 @@
                 converterEl.style.display = isCrypto ? 'block' : 'none';
             }
             
-            // Set default USDT rate from saved market prices
+            // Set USDT rate from saved market prices and display it
             if (isCrypto) {
                 const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
                 document.getElementById('usdt-rate').value = savedRate;
+                document.getElementById('usdt-rate-display').textContent = formatNumber(savedRate);
             }
 
             // Set default unit
