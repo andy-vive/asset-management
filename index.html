@@ -385,6 +385,11 @@
             color: var(--accent-cyan);
         }
 
+        .badge-orange {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
         /* Action buttons in table */
         .action-btn {
             background: none;
@@ -821,6 +826,9 @@
                 <span class="logo-text">Quản Lý Tài Sản</span>
             </div>
             <div class="header-actions">
+                <button class="btn btn-secondary" onclick="openExchangeRateModal()">
+                    💱 Tỷ giá
+                </button>
                 <button class="btn btn-secondary" onclick="openMarketPriceModal()">
                     💹 Giá thị trường
                 </button>
@@ -858,12 +866,24 @@
             </div>
         </div>
 
-        <!-- Market Prices Bar -->
+        <!-- Exchange Rate & Market Prices Bar -->
         <div class="market-prices-bar animate-in delay-1">
             <div class="market-prices-header">
-                <span class="market-prices-title">💹 Giá thị trường</span>
+                <span class="market-prices-title">💱 Tỷ giá & 💹 Giá thị trường</span>
                 <span class="market-prices-updated" id="prices-updated-time"></span>
             </div>
+            
+            <!-- Exchange Rate -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-cyan); border-radius: 10px; margin-bottom: 1rem;">
+                <span style="font-size: 1.5rem;">💱</span>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Tỷ giá USDT/VND</div>
+                    <div style="font-family: 'JetBrains Mono'; font-size: 1.25rem; font-weight: 600; color: var(--accent-cyan);" id="usdt-vnd-rate-display">25,000</div>
+                </div>
+                <button class="btn btn-secondary" style="padding: 0.5rem 1rem;" onclick="openExchangeRateModal()">✏️ Cập nhật</button>
+            </div>
+
+            <!-- Market Prices -->
             <div class="market-prices-grid" id="market-prices-display">
             </div>
         </div>
@@ -1079,8 +1099,9 @@
                             <option value="gold">Vàng nhẫn/miếng</option>
                             <option value="gold_sjc">Vàng SJC</option>
                             <option value="paxg">Vàng PAXG</option>
+                            <option value="btc">Bitcoin (BTC)</option>
                             <option value="usdt">USDT</option>
-                            <option value="crypto">Crypto khác (BTC, ETH...)</option>
+                            <option value="crypto">Crypto khác (ETH, SOL...)</option>
                             <option value="savings">Tiết kiệm</option>
                             <option value="other">Khác</option>
                         </select>
@@ -1139,11 +1160,11 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>🔄</span>
-                                <strong style="font-size: 0.875rem;">Chuyển đổi USDT → VND</strong>
+                                <strong style="font-size: 0.875rem;">Nhập giá bằng USDT</strong>
                             </div>
                             <div style="font-size: 0.8rem; color: var(--text-secondary);">
                                 Tỷ giá: <strong id="usdt-rate-display" style="color: var(--accent-cyan);">25,000</strong> VND/USDT
-                                <button onclick="openMarketPriceModal()" style="background: none; border: none; color: var(--accent-gold); cursor: pointer; font-size: 0.75rem; margin-left: 0.5rem;">✏️ Sửa</button>
+                                <button onclick="closeModal('add-modal'); openExchangeRateModal();" style="background: none; border: none; color: var(--accent-gold); cursor: pointer; font-size: 0.75rem; margin-left: 0.5rem;">✏️ Sửa</button>
                             </div>
                         </div>
                         <div class="form-row">
@@ -1265,20 +1286,67 @@
                 <h3 class="modal-title">💹 Cập nhật giá thị trường</h3>
                 <button class="modal-close" onclick="closeModal('market-price-modal')">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
-                    Cập nhật giá thị trường sẽ tự động tính lại giá trị hiện tại của tất cả tài sản cùng loại.
+                    Cập nhật giá thị trường cho các tài sản đang có trong danh mục.
                 </p>
-                <div id="market-price-fields"></div>
-                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 12px; border: 1px solid var(--accent-blue);">
-                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">
-                        💡 <strong>Mẹo:</strong> Giá cổ phiếu được quản lý riêng trong bảng danh mục cổ phiếu.
-                    </p>
+                
+                <!-- Cổ phiếu -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-weight: 600; margin-bottom: 0.75rem; color: var(--accent-blue);">📈 Cổ phiếu (VNĐ)</div>
+                    <div id="market-price-stock-fields"></div>
+                </div>
+
+                <!-- Vàng vật lý - VND -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-weight: 600; margin-bottom: 0.75rem; color: var(--accent-gold);">🥇 Tài sản VNĐ</div>
+                    <div id="market-price-gold-fields"></div>
+                </div>
+
+                <!-- Crypto - USDT -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-weight: 600; margin-bottom: 0.75rem; color: var(--accent-purple);">🪙 Crypto (USDT)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Quy đổi theo tỷ giá: <strong id="modal-usdt-rate">25,000</strong> VND/USDT
+                    </div>
+                    <div id="market-price-crypto-fields"></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('market-price-modal')">Huỷ</button>
                 <button class="btn btn-success" onclick="saveMarketPrices()">💾 Cập nhật giá</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exchange Rate Modal -->
+    <div class="modal-overlay" id="exchange-rate-modal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💱 Cập nhật tỷ giá USDT/VND</h3>
+                <button class="modal-close" onclick="closeModal('exchange-rate-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                    Tỷ giá này dùng để quy đổi giá trị các tài sản crypto (PAXG, BTC, ETH...) từ USDT sang VND.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Tỷ giá USDT/VND</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 1.5rem;">1 USDT =</div>
+                        <input type="number" class="form-input" id="new-usdt-rate" placeholder="25000" style="flex: 1; font-size: 1.25rem; text-align: right;">
+                        <div style="font-size: 1.25rem; color: var(--text-secondary);">VND</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 12px;">
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        💡 Sau khi cập nhật tỷ giá, giá trị VND của các tài sản crypto sẽ được tính lại tự động.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('exchange-rate-modal')">Huỷ</button>
+                <button class="btn btn-success" onclick="saveExchangeRate()">💾 Lưu tỷ giá</button>
             </div>
         </div>
     </div>
@@ -1301,11 +1369,12 @@
         // Asset type configurations
         const assetTypeConfig = {
             stock: { name: 'Cổ phiếu', unit: '', badge: 'badge-blue', icon: '📈', hasMarketPrice: false },
-            gold: { name: 'Vàng nhẫn', unit: 'Lượng', badge: 'badge-gold', icon: '🥇', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
-            gold_sjc: { name: 'Vàng SJC', unit: 'Lượng', badge: 'badge-gold', icon: '🏅', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
-            paxg: { name: 'Vàng PAXG', unit: 'PAXG', badge: 'badge-purple', icon: '💎', hasMarketPrice: true, priceUnit: 'USDT/PAXG', isCrypto: true },
-            usdt: { name: 'USDT', unit: 'USDT', badge: 'badge-cyan', icon: '💵', hasMarketPrice: true, priceUnit: 'VNĐ/USDT' },
-            crypto: { name: 'Crypto khác', unit: '', badge: 'badge-purple', icon: '🪙', hasMarketPrice: false, isCrypto: true },
+            gold: { name: 'Vàng nhẫn', unit: 'Lượng', badge: 'badge-gold', icon: '🥇', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng', currency: 'VND' },
+            gold_sjc: { name: 'Vàng SJC', unit: 'Lượng', badge: 'badge-gold', icon: '🏅', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng', currency: 'VND' },
+            paxg: { name: 'Vàng PAXG', unit: 'PAXG', badge: 'badge-purple', icon: '💎', hasMarketPrice: true, priceUnit: 'USDT/PAXG', currency: 'USDT', isCrypto: true },
+            btc: { name: 'Bitcoin', unit: 'BTC', badge: 'badge-orange', icon: '₿', hasMarketPrice: true, priceUnit: 'USDT/BTC', currency: 'USDT', isCrypto: true },
+            usdt: { name: 'USDT', unit: 'USDT', badge: 'badge-cyan', icon: '💵', hasMarketPrice: false, currency: 'VND' },
+            crypto: { name: 'Crypto khác', unit: '', badge: 'badge-purple', icon: '🪙', hasMarketPrice: false, currency: 'USDT', isCrypto: true },
             savings: { name: 'Tiết kiệm', unit: 'VNĐ', badge: 'badge-blue', icon: '🏦', hasMarketPrice: false },
             other: { name: 'Khác', unit: '', badge: 'badge-blue', icon: '📦', hasMarketPrice: false }
         };
@@ -1384,50 +1453,133 @@
         }
 
         // ============== MARKET PRICES ==============
+        function getActiveAssetTypes() {
+            const types = {
+                vnd: new Set(),    // Assets priced in VND
+                usdt: new Set()    // Assets priced in USDT (crypto)
+            };
+
+            // Get from other assets
+            portfolioData.otherAssets.forEach(asset => {
+                const config = assetTypeConfig[asset.type];
+                if (config) {
+                    if (config.currency === 'USDT' || config.isCrypto) {
+                        types.usdt.add(asset.type);
+                    } else if (asset.type !== 'savings' && asset.type !== 'usdt') {
+                        types.vnd.add(asset.type);
+                    }
+                }
+            });
+
+            return {
+                vnd: Array.from(types.vnd),
+                usdt: Array.from(types.usdt)
+            };
+        }
+
+        function getActiveStocks() {
+            return portfolioData.stocks.map(s => ({
+                code: s.code,
+                company: s.company,
+                marketPrice: s.marketPrice
+            }));
+        }
+
         function renderMarketPrices() {
             const container = document.getElementById('market-prices-display');
             const updatedTimeEl = document.getElementById('prices-updated-time');
+            const usdtVndRateEl = document.getElementById('usdt-vnd-rate-display');
             
             if (!portfolioData.marketPrices) {
                 portfolioData.marketPrices = {};
             }
 
-            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
+            // Display USDT/VND rate
+            const usdtRate = portfolioData.marketPrices.usdtRate?.price || 25000;
+            if (usdtVndRateEl) {
+                usdtVndRateEl.textContent = formatNumber(usdtRate);
+            }
+
+            const activeTypes = getActiveAssetTypes();
+            const allTypes = [...activeTypes.vnd, ...activeTypes.usdt];
+            
             let html = '';
             let latestUpdate = null;
 
-            priceTypes.forEach(type => {
-                const config = assetTypeConfig[type];
-                const priceData = portfolioData.marketPrices[type];
-                
-                if (priceData && priceData.price) {
+            if (allTypes.length === 0 && portfolioData.stocks.length === 0) {
+                html = '<div style="color: var(--text-muted); font-size: 0.875rem;">Chưa có tài sản nào. Thêm tài sản để hiển thị giá thị trường.</div>';
+            } else {
+                // Show stocks summary
+                if (portfolioData.stocks.length > 0) {
                     html += `
                         <div class="market-price-item">
-                            <span class="market-price-icon">${config.icon}</span>
+                            <span class="market-price-icon">📈</span>
                             <div class="market-price-info">
-                                <div class="market-price-name">${config.name}</div>
-                                <div class="market-price-value">
-                                    ${formatNumber(priceData.price)}
-                                    <span class="market-price-unit">${config.priceUnit}</span>
+                                <div class="market-price-name">Cổ phiếu (${portfolioData.stocks.length} mã)</div>
+                                <div class="market-price-value" style="font-size: 0.85rem;">
+                                    ${portfolioData.stocks.map(s => s.code).join(', ')}
                                 </div>
                             </div>
                         </div>
                     `;
-                    if (priceData.updatedAt && (!latestUpdate || new Date(priceData.updatedAt) > new Date(latestUpdate))) {
-                        latestUpdate = priceData.updatedAt;
-                    }
-                } else {
-                    html += `
-                        <div class="market-price-item" style="opacity: 0.5;">
-                            <span class="market-price-icon">${config.icon}</span>
-                            <div class="market-price-info">
-                                <div class="market-price-name">${config.name}</div>
-                                <div class="market-price-value" style="color: var(--text-muted);">Chưa cập nhật</div>
-                            </div>
-                        </div>
-                    `;
                 }
-            });
+
+                // Show other asset types
+                allTypes.forEach(type => {
+                    const config = assetTypeConfig[type];
+                    if (!config) return;
+                    
+                    const priceData = portfolioData.marketPrices[type];
+                    const isCrypto = config.currency === 'USDT' || config.isCrypto;
+                    
+                    if (priceData && priceData.price) {
+                        let priceDisplay = '';
+                        if (isCrypto) {
+                            const vndPrice = priceData.price * usdtRate;
+                            priceDisplay = `
+                                <div class="market-price-value">
+                                    ${formatNumber(priceData.price)}
+                                    <span class="market-price-unit">USDT</span>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                    ≈ ${formatVND(vndPrice)}
+                                </div>
+                            `;
+                        } else {
+                            priceDisplay = `
+                                <div class="market-price-value">
+                                    ${formatNumber(priceData.price)}
+                                    <span class="market-price-unit">${config.priceUnit || 'VNĐ'}</span>
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                            <div class="market-price-item">
+                                <span class="market-price-icon">${config.icon}</span>
+                                <div class="market-price-info">
+                                    <div class="market-price-name">${config.name}</div>
+                                    ${priceDisplay}
+                                </div>
+                            </div>
+                        `;
+                        
+                        if (priceData.updatedAt && (!latestUpdate || new Date(priceData.updatedAt) > new Date(latestUpdate))) {
+                            latestUpdate = priceData.updatedAt;
+                        }
+                    } else {
+                        html += `
+                            <div class="market-price-item" style="opacity: 0.5;">
+                                <span class="market-price-icon">${config.icon}</span>
+                                <div class="market-price-info">
+                                    <div class="market-price-name">${config.name}</div>
+                                    <div class="market-price-value" style="color: var(--text-muted);">Chưa cập nhật</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
 
             container.innerHTML = html;
             
@@ -1435,89 +1587,182 @@
                 const date = new Date(latestUpdate);
                 updatedTimeEl.textContent = `Cập nhật: ${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}`;
             } else {
-                updatedTimeEl.textContent = 'Chưa cập nhật giá';
+                updatedTimeEl.textContent = '';
             }
+        }
+
+        function openExchangeRateModal() {
+            const modal = document.getElementById('exchange-rate-modal');
+            const currentRate = portfolioData.marketPrices?.usdtRate?.price || 25000;
+            document.getElementById('new-usdt-rate').value = currentRate;
+            modal.classList.add('active');
+        }
+
+        function saveExchangeRate() {
+            const newRate = parseFloat(document.getElementById('new-usdt-rate').value) || 25000;
+            
+            if (!portfolioData.marketPrices) {
+                portfolioData.marketPrices = {};
+            }
+            
+            portfolioData.marketPrices.usdtRate = {
+                price: newRate,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Recalculate VND prices for all crypto assets
+            updateCryptoVndPrices();
+
+            saveData();
+            renderAll();
+            closeModal('exchange-rate-modal');
+            showToast('Đã cập nhật tỷ giá USDT/VND!', 'success');
         }
 
         function openMarketPriceModal() {
             const modal = document.getElementById('market-price-modal');
-            const container = document.getElementById('market-price-fields');
+            const goldFieldsContainer = document.getElementById('market-price-gold-fields');
+            const cryptoFieldsContainer = document.getElementById('market-price-crypto-fields');
+            const stockFieldsContainer = document.getElementById('market-price-stock-fields');
             
             if (!portfolioData.marketPrices) {
                 portfolioData.marketPrices = {};
             }
 
-            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
-            let html = '';
+            const usdtRate = portfolioData.marketPrices.usdtRate?.price || 25000;
+            document.getElementById('modal-usdt-rate').textContent = formatNumber(usdtRate);
 
-            priceTypes.forEach(type => {
-                const config = assetTypeConfig[type];
-                const priceData = portfolioData.marketPrices[type] || {};
-                
-                html += `
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.75rem;">
-                        <span style="font-size: 1.5rem;">${config.icon}</span>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; margin-bottom: 0.25rem;">${config.name}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">${config.priceUnit}</div>
+            const activeTypes = getActiveAssetTypes();
+
+            // Stock fields
+            let stockHtml = '';
+            if (portfolioData.stocks.length > 0) {
+                portfolioData.stocks.forEach((stock, index) => {
+                    stockHtml += `
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.5rem;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--accent-blue);">${stock.code}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${stock.company || ''}</div>
+                            </div>
+                            <div style="width: 150px;">
+                                <input type="number" class="form-input" style="padding: 0.5rem;" id="stock-price-${index}" 
+                                       value="${stock.marketPrice || ''}" 
+                                       placeholder="Giá VNĐ">
+                            </div>
                         </div>
-                        <div style="width: 180px;">
-                            <input type="number" class="form-input" id="price-${type}" 
-                                   value="${priceData.price || ''}" 
-                                   placeholder="Nhập giá...">
+                    `;
+                });
+            } else {
+                stockHtml = '<div style="color: var(--text-muted); font-size: 0.875rem; padding: 0.5rem;">Chưa có cổ phiếu</div>';
+            }
+            stockFieldsContainer.innerHTML = stockHtml;
+
+            // Gold/VND fields
+            let goldHtml = '';
+            if (activeTypes.vnd.length > 0) {
+                activeTypes.vnd.forEach(type => {
+                    const config = assetTypeConfig[type];
+                    const priceData = portfolioData.marketPrices[type] || {};
+                    
+                    goldHtml += `
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.5rem;">
+                            <span style="font-size: 1.25rem;">${config.icon}</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${config.name}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${config.priceUnit || 'VNĐ'}</div>
+                            </div>
+                            <div style="width: 150px;">
+                                <input type="number" class="form-input" style="padding: 0.5rem;" id="price-${type}" 
+                                       value="${priceData.price || ''}" 
+                                       placeholder="Giá VNĐ">
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } else {
+                goldHtml = '<div style="color: var(--text-muted); font-size: 0.875rem; padding: 0.5rem;">Chưa có tài sản</div>';
+            }
+            goldFieldsContainer.innerHTML = goldHtml;
 
-            // Add USD/VND exchange rate for PAXG conversion
-            html += `
-                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--accent-gold); border-radius: 12px; margin-top: 1rem;">
-                    <span style="font-size: 1.5rem;">💱</span>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 500; margin-bottom: 0.25rem;">Tỷ giá USD/VND</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Dùng để quy đổi PAXG sang VND</div>
-                    </div>
-                    <div style="width: 180px;">
-                        <input type="number" class="form-input" id="price-usdvnd" 
-                               value="${portfolioData.marketPrices.usdvnd?.price || 25000}" 
-                               placeholder="25000">
-                    </div>
-                </div>
-            `;
+            // Crypto/USDT fields
+            let cryptoHtml = '';
+            if (activeTypes.usdt.length > 0) {
+                activeTypes.usdt.forEach(type => {
+                    const config = assetTypeConfig[type];
+                    const priceData = portfolioData.marketPrices[type] || {};
+                    
+                    cryptoHtml += `
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 0.5rem;">
+                            <span style="font-size: 1.25rem;">${config.icon}</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${config.name}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">USDT/${config.unit}</div>
+                            </div>
+                            <div style="width: 150px;">
+                                <input type="number" step="0.01" class="form-input" style="padding: 0.5rem;" id="price-${type}" 
+                                       value="${priceData.price || ''}" 
+                                       placeholder="Giá USDT">
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                cryptoHtml = '<div style="color: var(--text-muted); font-size: 0.875rem; padding: 0.5rem;">Chưa có crypto</div>';
+            }
+            cryptoFieldsContainer.innerHTML = cryptoHtml;
 
-            container.innerHTML = html;
             modal.classList.add('active');
         }
 
         function saveMarketPrices() {
-            const priceTypes = ['gold', 'gold_sjc', 'paxg', 'usdt'];
             const now = new Date().toISOString();
             
             if (!portfolioData.marketPrices) {
                 portfolioData.marketPrices = {};
             }
 
-            priceTypes.forEach(type => {
-                const price = parseFloat(document.getElementById(`price-${type}`).value);
-                if (price && price > 0) {
-                    portfolioData.marketPrices[type] = {
-                        price: price,
-                        updatedAt: now
-                    };
+            const activeTypes = getActiveAssetTypes();
+
+            // Save stock prices
+            portfolioData.stocks.forEach((stock, index) => {
+                const priceInput = document.getElementById(`stock-price-${index}`);
+                if (priceInput) {
+                    const price = parseFloat(priceInput.value);
+                    if (price && price > 0) {
+                        stock.marketPrice = price;
+                    }
                 }
             });
 
-            // Save USD/VND rate
-            const usdvnd = parseFloat(document.getElementById('price-usdvnd').value);
-            if (usdvnd && usdvnd > 0) {
-                portfolioData.marketPrices.usdvnd = {
-                    price: usdvnd,
-                    updatedAt: now
-                };
-            }
+            // Save VND asset prices
+            activeTypes.vnd.forEach(type => {
+                const priceInput = document.getElementById(`price-${type}`);
+                if (priceInput) {
+                    const price = parseFloat(priceInput.value);
+                    if (price && price > 0) {
+                        portfolioData.marketPrices[type] = {
+                            price: price,
+                            updatedAt: now
+                        };
+                    }
+                }
+            });
 
-            // Update all other assets with new prices
+            // Save USDT asset prices
+            activeTypes.usdt.forEach(type => {
+                const priceInput = document.getElementById(`price-${type}`);
+                if (priceInput) {
+                    const price = parseFloat(priceInput.value);
+                    if (price && price > 0) {
+                        portfolioData.marketPrices[type] = {
+                            price: price,
+                            updatedAt: now
+                        };
+                    }
+                }
+            });
+
+            // Update all assets with new prices
             updateAssetPricesFromMarket();
 
             saveData();
@@ -1527,18 +1772,39 @@
         }
 
         function updateAssetPricesFromMarket() {
-            const usdvnd = portfolioData.marketPrices.usdvnd?.price || 25000;
+            const usdtRate = portfolioData.marketPrices?.usdtRate?.price || 25000;
 
             portfolioData.otherAssets.forEach(asset => {
+                const config = assetTypeConfig[asset.type];
                 if (portfolioData.marketPrices[asset.type]?.price) {
-                    let newPrice = portfolioData.marketPrices[asset.type].price;
+                    const marketPrice = portfolioData.marketPrices[asset.type].price;
                     
-                    // Convert PAXG from USD to VND
-                    if (asset.type === 'paxg') {
-                        newPrice = newPrice * usdvnd;
+                    if (config?.currency === 'USDT' || config?.isCrypto) {
+                        // Crypto: save USDT price and calculate VND
+                        asset.currentUsdt = marketPrice;
+                        asset.currentPrice = marketPrice * usdtRate;
+                    } else {
+                        // Non-crypto: price is already in VND
+                        asset.currentPrice = marketPrice;
                     }
-                    
-                    asset.currentPrice = newPrice;
+                }
+            });
+        }
+
+        function updateCryptoVndPrices() {
+            const usdtRate = portfolioData.marketPrices?.usdtRate?.price || 25000;
+
+            portfolioData.otherAssets.forEach(asset => {
+                const config = assetTypeConfig[asset.type];
+                if (config?.isCrypto || config?.currency === 'USDT') {
+                    // Recalculate VND prices from USDT
+                    if (asset.costUsdt) {
+                        asset.costPrice = asset.costUsdt * usdtRate;
+                    }
+                    if (asset.currentUsdt) {
+                        asset.currentPrice = asset.currentUsdt * usdtRate;
+                    }
+                    asset.usdtRate = usdtRate;
                 }
             });
         }
@@ -1837,7 +2103,7 @@
                 // Render individual assets
                 group.assets.forEach(asset => {
                     const index = asset.originalIndex;
-                    const isCrypto = ['paxg', 'crypto'].includes(asset.type);
+                    const isCrypto = ['paxg', 'btc', 'crypto'].includes(asset.type);
                     
                     if (asset.type === 'savings') {
                         const weight = totalValue > 0 ? (asset.amount / totalValue * 100) : 0;
@@ -1997,7 +2263,7 @@
             document.getElementById('transaction-date').value = today;
             
             // Set default USDT rate from market prices
-            const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
+            const savedRate = portfolioData.marketPrices?.usdtRate?.price || 25000;
             const usdtRateEl = document.getElementById('usdt-rate');
             const usdtRateDisplayEl = document.getElementById('usdt-rate-display');
             if (usdtRateEl) usdtRateEl.value = savedRate;
@@ -2012,10 +2278,10 @@
 
         function toggleAssetFields() {
             const type = document.getElementById('asset-type').value;
-            const isCrypto = ['paxg', 'crypto'].includes(type);
+            const isCrypto = ['paxg', 'btc', 'crypto'].includes(type);
             
             document.getElementById('stock-fields').style.display = type === 'stock' ? 'block' : 'none';
-            document.getElementById('other-fields').style.display = ['gold', 'gold_sjc', 'paxg', 'usdt', 'crypto', 'other'].includes(type) ? 'block' : 'none';
+            document.getElementById('other-fields').style.display = ['gold', 'gold_sjc', 'paxg', 'btc', 'usdt', 'crypto', 'other'].includes(type) ? 'block' : 'none';
             document.getElementById('savings-fields').style.display = type === 'savings' ? 'block' : 'none';
             
             // Show/hide USDT converter for crypto assets
@@ -2026,7 +2292,7 @@
             
             // Set USDT rate from saved market prices and display it
             if (isCrypto) {
-                const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
+                const savedRate = portfolioData.marketPrices?.usdtRate?.price || 25000;
                 document.getElementById('usdt-rate').value = savedRate;
                 document.getElementById('usdt-rate-display').textContent = formatNumber(savedRate);
             }
@@ -2040,8 +2306,8 @@
                 // For crypto, clear the name to let user enter coin name
                 if (type === 'crypto') {
                     document.getElementById('asset-name').value = '';
-                    document.getElementById('asset-name').placeholder = 'VD: Bitcoin, Ethereum, SOL...';
-                    document.getElementById('asset-unit').placeholder = 'BTC, ETH, SOL...';
+                    document.getElementById('asset-name').placeholder = 'VD: Ethereum, Solana, SOL...';
+                    document.getElementById('asset-unit').placeholder = 'ETH, SOL...';
                 }
             }
         }
@@ -2138,7 +2404,7 @@
                 }
 
                 // For crypto, also save USDT prices
-                const isCrypto = ['paxg', 'crypto'].includes(type);
+                const isCrypto = ['paxg', 'btc', 'crypto'].includes(type);
                 const assetData = { type, name, quantity, unit, costPrice, currentPrice };
                 
                 if (isCrypto) {
