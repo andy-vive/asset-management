@@ -1080,6 +1080,7 @@
                             <option value="gold_sjc">Vàng SJC</option>
                             <option value="paxg">Vàng PAXG</option>
                             <option value="usdt">USDT</option>
+                            <option value="crypto">Crypto khác (BTC, ETH...)</option>
                             <option value="savings">Tiết kiệm</option>
                             <option value="other">Khác</option>
                         </select>
@@ -1125,20 +1126,51 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Số lượng</label>
-                            <input type="number" step="0.01" class="form-input" id="asset-quantity" placeholder="0">
+                            <input type="number" step="0.000001" class="form-input" id="asset-quantity" placeholder="0">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Đơn vị</label>
                             <input type="text" class="form-input" id="asset-unit" placeholder="Lượng, PAXG, USDT...">
                         </div>
                     </div>
+                    
+                    <!-- USDT to VND Converter for Crypto -->
+                    <div id="usdt-converter" style="display: none; margin-bottom: 1rem; padding: 1rem; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--accent-purple); border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <span>🔄</span>
+                            <strong style="font-size: 0.875rem;">Chuyển đổi USDT → VND</strong>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Giá vốn (USDT)</label>
+                                <input type="number" step="0.01" class="form-input" id="cost-usdt" placeholder="0" oninput="convertUsdtToVnd('cost')">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Tỷ giá USDT/VND</label>
+                                <input type="number" class="form-input" id="usdt-rate" placeholder="25000" oninput="convertUsdtToVnd('cost'); convertUsdtToVnd('price')">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top: 0.75rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Giá hiện tại (USDT)</label>
+                                <input type="number" step="0.01" class="form-input" id="price-usdt" placeholder="0" oninput="convertUsdtToVnd('price')">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">&nbsp;</label>
+                                <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; font-size: 0.8rem; color: var(--text-muted);">
+                                    Giá VND sẽ được tự động tính
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Giá vốn / đơn vị</label>
+                            <label class="form-label" id="cost-label">Giá vốn / đơn vị (VND)</label>
                             <input type="number" class="form-input" id="asset-cost" placeholder="0">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Giá hiện tại / đơn vị</label>
+                            <label class="form-label" id="price-label">Giá hiện tại / đơn vị (VND)</label>
                             <input type="number" class="form-input" id="asset-price" placeholder="0">
                         </div>
                     </div>
@@ -1276,8 +1308,9 @@
             stock: { name: 'Cổ phiếu', unit: '', badge: 'badge-blue', icon: '📈', hasMarketPrice: false },
             gold: { name: 'Vàng nhẫn', unit: 'Lượng', badge: 'badge-gold', icon: '🥇', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
             gold_sjc: { name: 'Vàng SJC', unit: 'Lượng', badge: 'badge-gold', icon: '🏅', hasMarketPrice: true, priceUnit: 'VNĐ/Lượng' },
-            paxg: { name: 'Vàng PAXG', unit: 'PAXG', badge: 'badge-purple', icon: '💎', hasMarketPrice: true, priceUnit: 'USD/PAXG' },
+            paxg: { name: 'Vàng PAXG', unit: 'PAXG', badge: 'badge-purple', icon: '💎', hasMarketPrice: true, priceUnit: 'USDT/PAXG', isCrypto: true },
             usdt: { name: 'USDT', unit: 'USDT', badge: 'badge-cyan', icon: '💵', hasMarketPrice: true, priceUnit: 'VNĐ/USDT' },
+            crypto: { name: 'Crypto khác', unit: '', badge: 'badge-purple', icon: '🪙', hasMarketPrice: false, isCrypto: true },
             savings: { name: 'Tiết kiệm', unit: 'VNĐ', badge: 'badge-blue', icon: '🏦', hasMarketPrice: false },
             other: { name: 'Khác', unit: '', badge: 'badge-blue', icon: '📦', hasMarketPrice: false }
         };
@@ -1809,6 +1842,7 @@
                 // Render individual assets
                 group.assets.forEach(asset => {
                     const index = asset.originalIndex;
+                    const isCrypto = ['paxg', 'crypto'].includes(asset.type);
                     
                     if (asset.type === 'savings') {
                         const weight = totalValue > 0 ? (asset.amount / totalValue * 100) : 0;
@@ -1835,16 +1869,27 @@
                         const profitPercent = costValue > 0 ? (profit / costValue * 100) : 0;
                         const weight = totalValue > 0 ? (currentValue / totalValue * 100) : 0;
 
+                        // Show USDT price for crypto
+                        let costDisplay = formatNumber(asset.costPrice);
+                        let priceDisplay = formatNumber(asset.currentPrice);
+                        if (isCrypto && asset.costUsdt) {
+                            costDisplay = `<span title="${formatNumber(asset.costPrice)} VND">${formatNumber(asset.costUsdt)} <small style="color:var(--text-muted)">USDT</small></span>`;
+                        }
+                        if (isCrypto && asset.currentUsdt) {
+                            priceDisplay = `<span title="${formatNumber(asset.currentPrice)} VND">${formatNumber(asset.currentUsdt)} <small style="color:var(--text-muted)">USDT</small></span>`;
+                        }
+
                         html += `
                             <tr>
                                 <td style="padding-left: 2rem;">
                                     <span style="color: var(--text-secondary);">└</span> ${asset.name}
+                                    ${isCrypto ? '<span style="font-size:0.7rem; color:var(--accent-purple); margin-left:0.25rem;">🪙</span>' : ''}
                                 </td>
                                 <td>${weight.toFixed(2)}%</td>
                                 <td>${formatNumber(asset.quantity)}</td>
                                 <td>${asset.unit}</td>
-                                <td>${formatNumber(asset.costPrice)}</td>
-                                <td>${formatNumber(asset.currentPrice)}</td>
+                                <td>${costDisplay}</td>
+                                <td>${priceDisplay}</td>
                                 <td>${formatVND(costValue)}</td>
                                 <td>${formatVND(currentValue)}</td>
                                 <td class="${profit >= 0 ? 'positive' : 'negative'}">${formatVND(profit)}</td>
@@ -1946,7 +1991,6 @@
             
             // Reset form
             document.getElementById('asset-type').value = type === 'stock' ? 'stock' : (type === 'other' ? 'gold' : 'stock');
-            toggleAssetFields();
             
             // Clear inputs
             document.querySelectorAll('#add-modal input').forEach(input => {
@@ -1956,6 +2000,13 @@
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transaction-date').value = today;
+            
+            // Set default USDT rate
+            const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
+            const usdtRateEl = document.getElementById('usdt-rate');
+            if (usdtRateEl) usdtRateEl.value = savedRate;
+            
+            toggleAssetFields();
         }
 
         function closeModal(modalId) {
@@ -1964,15 +2015,50 @@
 
         function toggleAssetFields() {
             const type = document.getElementById('asset-type').value;
+            const isCrypto = ['paxg', 'crypto'].includes(type);
+            
             document.getElementById('stock-fields').style.display = type === 'stock' ? 'block' : 'none';
-            document.getElementById('other-fields').style.display = ['gold', 'gold_sjc', 'paxg', 'usdt', 'other'].includes(type) ? 'block' : 'none';
+            document.getElementById('other-fields').style.display = ['gold', 'gold_sjc', 'paxg', 'usdt', 'crypto', 'other'].includes(type) ? 'block' : 'none';
             document.getElementById('savings-fields').style.display = type === 'savings' ? 'block' : 'none';
+            
+            // Show/hide USDT converter for crypto assets
+            const converterEl = document.getElementById('usdt-converter');
+            if (converterEl) {
+                converterEl.style.display = isCrypto ? 'block' : 'none';
+            }
+            
+            // Set default USDT rate from saved market prices
+            if (isCrypto) {
+                const savedRate = portfolioData.marketPrices?.usdt?.price || 25000;
+                document.getElementById('usdt-rate').value = savedRate;
+            }
 
             // Set default unit
             if (type !== 'stock' && type !== 'savings') {
                 const config = assetTypeConfig[type];
                 document.getElementById('asset-unit').value = config.unit;
                 document.getElementById('asset-name').value = config.name;
+                
+                // For crypto, clear the name to let user enter coin name
+                if (type === 'crypto') {
+                    document.getElementById('asset-name').value = '';
+                    document.getElementById('asset-name').placeholder = 'VD: Bitcoin, Ethereum, SOL...';
+                    document.getElementById('asset-unit').placeholder = 'BTC, ETH, SOL...';
+                }
+            }
+        }
+
+        function convertUsdtToVnd(field) {
+            const usdtRate = parseFloat(document.getElementById('usdt-rate').value) || 25000;
+            
+            if (field === 'cost') {
+                const costUsdt = parseFloat(document.getElementById('cost-usdt').value) || 0;
+                const costVnd = Math.round(costUsdt * usdtRate);
+                document.getElementById('asset-cost').value = costVnd;
+            } else if (field === 'price') {
+                const priceUsdt = parseFloat(document.getElementById('price-usdt').value) || 0;
+                const priceVnd = Math.round(priceUsdt * usdtRate);
+                document.getElementById('asset-price').value = priceVnd;
             }
         }
 
@@ -2053,7 +2139,17 @@
                     return;
                 }
 
-                portfolioData.otherAssets.push({ type, name, quantity, unit, costPrice, currentPrice });
+                // For crypto, also save USDT prices
+                const isCrypto = ['paxg', 'crypto'].includes(type);
+                const assetData = { type, name, quantity, unit, costPrice, currentPrice };
+                
+                if (isCrypto) {
+                    assetData.costUsdt = parseFloat(document.getElementById('cost-usdt').value) || 0;
+                    assetData.currentUsdt = parseFloat(document.getElementById('price-usdt').value) || 0;
+                    assetData.usdtRate = parseFloat(document.getElementById('usdt-rate').value) || 25000;
+                }
+
+                portfolioData.otherAssets.push(assetData);
 
                 portfolioData.transactions.push({
                     date: transactionDate,
